@@ -14,6 +14,10 @@
     <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="static/css/main.css">
+    <link rel="stylesheet" href="static/css/components.css">
+
     <!-- Custom Config for Light Theme -->
     <script>
         tailwind.config = {
@@ -41,744 +45,74 @@
             }
         }
     </script>
-
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc; /* Slate-50 */
-        }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8; 
-        }
-
-        .fade-in {
-            animation: fadeIn 0.3s ease-in-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Timeline Connector Line */
-        .timeline-line::before {
-            content: '';
-            position: absolute;
-            top: 2rem;
-            bottom: 0;
-            left: 15px;
-            width: 2px;
-            background-color: #e2e8f0;
-            z-index: 0;
-        }
-
-        /* Drag and Drop Styles */
-        .kanban-col {
-            min-height: 200px;
-            transition: background-color 0.2s;
-        }
-        .kanban-col.drag-over {
-            background-color: #f1f5f9; /* Slate-100 */
-            border-radius: 0.75rem;
-        }
-        .draggable-card {
-            cursor: grab;
-        }
-        .draggable-card:active {
-            cursor: grabbing;
-        }
-        .draggable-card.dragging {
-            opacity: 0.5;
-            transform: scale(0.98);
-        }
-    </style>
 </head>
 <body class="text-slate-800 antialiased h-screen flex flex-col overflow-hidden">
 
-    <!-- Top Navigation -->
-    <nav class="bg-white border-b border-slate-200 h-16 flex-none z-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="bg-primary-500 text-white p-2 rounded-lg shadow-sm">
-                    <i class="fa-solid fa-magnifying-glass text-lg"></i>
-                </div>
-                <h1 class="text-xl font-bold tracking-tight text-slate-900">Magnification</h1>
-            </div>
-            
-            <!-- Desktop Nav -->
-            <div class="hidden md:flex gap-1 bg-slate-100 p-1 rounded-lg">
-                <button onclick="switchTab('jobs')" id="nav-jobs" class="px-4 py-1.5 rounded-md text-sm font-medium bg-white text-primary-700 shadow-sm transition-all">
-                    New Jobs
-                </button>
-                <button onclick="switchTab('tracker')" id="nav-tracker" class="px-4 py-1.5 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 transition-all">
-                    Tracker
-                </button>
-            </div>
+    <!-- Include Header -->
+    <div id="header-container"></div>
 
-            <!-- Header Actions -->
-            <div class="flex items-center gap-4">
-                <button class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 shadow-sm transition-colors">
-                    Find Jobs
-                </button>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Mobile Tab Bar (Bottom) -->
-    <div class="md:hidden fixed bottom-0 w-full bg-white border-t border-slate-200 z-30 flex justify-around py-3 pb-safe">
-        <button onclick="switchTab('jobs')" id="mob-nav-jobs" class="flex flex-col items-center text-primary-600">
-            <i class="fa-solid fa-briefcase text-xl mb-1"></i>
-            <span class="text-xs font-medium">New</span>
-        </button>
-        <button onclick="switchTab('tracker')" id="mob-nav-tracker" class="flex flex-col items-center text-slate-400">
-            <i class="fa-solid fa-list-check text-xl mb-1"></i>
-            <span class="text-xs font-medium">Tracker</span>
-        </button>
-    </div>
+    <!-- Include Mobile Navigation -->
+    <div id="mobile-nav-container"></div>
 
     <!-- Main Content Layout -->
     <div class="flex flex-1 overflow-hidden relative">
         
-        <!-- Sidebar Filters (Desktop Only) -->
-        <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 p-6 overflow-y-auto">
-            <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Filters</h2>
-            
-            <div class="space-y-6">
-                <!-- Search -->
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Search</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400 text-sm"></i>
-                        <input type="text" id="searchInput" placeholder="Title, Company..." 
-                            class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-                    </div>
-                </div>
-            </div>
-        </aside>
+        <!-- Include Sidebar -->
+        <div id="sidebar-container"></div>
 
         <!-- Main View Container -->
         <main class="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-8 pb-20 md:pb-8" id="mainContainer">
             
-            <!-- VIEW 1: NEW JOBS -->
-            <div id="view-jobs" class="fade-in max-w-6xl mx-auto">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800">New Opportunities</h2>
-                    <span class="text-sm text-slate-500">Showing <span class="font-bold text-slate-900" id="newJobCount">0</span> jobs</span>
-                </div>
-                
-                <div id="newJobsGrid" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                    <!-- Cards Injected Here -->
-                </div>
-            </div>
+            <!-- Include New Jobs View -->
+            <div id="new-jobs-container"></div>
 
-            <!-- VIEW 2: TRACKER (Kanban Board) -->
-            <div id="view-tracker" class="hidden fade-in h-full flex flex-col">
-                <div class="flex justify-between items-center mb-6 px-1">
-                    <h2 class="text-2xl font-bold text-slate-800">Application Pipeline</h2>
-                    <div class="text-sm text-slate-400 hidden sm:block">
-                        <i class="fa-regular fa-hand-pointer mr-1"></i> Drag and drop to update status
-                    </div>
-                </div>
-
-                <!-- Kanban Columns -->
-                <div class="flex-1 overflow-x-auto overflow-y-hidden">
-                    <div class="flex gap-6 h-full min-w-[1000px] md:min-w-0 pb-4">
-                        
-                        <!-- Col 1: Applied -->
-                        <div class="flex-1 flex flex-col min-w-[260px]">
-                            <div class="flex items-center justify-between mb-3 px-1">
-                                <h3 class="font-semibold text-slate-700 flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full bg-blue-500"></span> Applied
-                                </h3>
-                                <span class="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full" id="count-applied">0</span>
-                            </div>
-                            <div class="flex-1 bg-slate-100/50 rounded-xl p-3 border border-slate-200 overflow-y-auto kanban-col" 
-                                 id="col-applied" 
-                                 ondrop="drop(event, 'Applied')" 
-                                 ondragover="allowDrop(event)">
-                                <!-- Cards -->
-                            </div>
-                        </div>
-
-                        <!-- Col 2: Interviewing -->
-                        <div class="flex-1 flex flex-col min-w-[260px]">
-                            <div class="flex items-center justify-between mb-3 px-1">
-                                <h3 class="font-semibold text-slate-700 flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> Interviewing
-                                </h3>
-                                <span class="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full" id="count-interview">0</span>
-                            </div>
-                            <div class="flex-1 bg-amber-50/50 rounded-xl p-3 border border-amber-100 overflow-y-auto kanban-col" 
-                                 id="col-interview" 
-                                 ondrop="drop(event, 'Interview 1')" 
-                                 ondragover="allowDrop(event)">
-                                <!-- Cards -->
-                            </div>
-                        </div>
-
-                        <!-- Col 3: Offers -->
-                        <div class="flex-1 flex flex-col min-w-[260px]">
-                            <div class="flex items-center justify-between mb-3 px-1">
-                                <h3 class="font-semibold text-slate-700 flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Offers
-                                </h3>
-                                <span class="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full" id="count-offer">0</span>
-                            </div>
-                            <div class="flex-1 bg-emerald-50/50 rounded-xl p-3 border border-emerald-100 overflow-y-auto kanban-col" 
-                                 id="col-offer" 
-                                 ondrop="drop(event, 'Offer')" 
-                                 ondragover="allowDrop(event)">
-                                <!-- Cards -->
-                            </div>
-                        </div>
-
-                        <!-- Col 4: Archived -->
-                        <div class="flex-1 flex flex-col min-w-[260px]">
-                            <div class="flex items-center justify-between mb-3 px-1">
-                                <h3 class="font-semibold text-slate-700 flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full bg-slate-400"></span> Archived
-                                </h3>
-                                <span class="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full" id="count-archived">0</span>
-                            </div>
-                            <div class="flex-1 bg-slate-100/50 rounded-xl p-3 border border-slate-200 overflow-y-auto kanban-col" 
-                                 id="col-archived" 
-                                 ondrop="drop(event, 'Rejected')" 
-                                 ondragover="allowDrop(event)">
-                                <!-- Cards -->
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
+            <!-- Include Tracker View -->
+            <div id="tracker-container"></div>
 
         </main>
 
-        <!-- JOB DETAIL PANEL (Slide-over) -->
-        <div id="jobDetailPanel" class="fixed inset-y-0 right-0 w-full sm:w-[600px] bg-white shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out z-50 flex flex-col border-l border-slate-200">
-            
-            <!-- Panel Header -->
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-start bg-slate-50">
-                <div>
-                    <button onclick="closePanel()" class="mb-2 text-slate-400 hover:text-slate-600 text-sm flex items-center gap-1">
-                        <i class="fa-solid fa-arrow-left"></i> Back
-                    </button>
-                    <h2 id="detailTitle" class="text-xl font-bold text-slate-900">Loading...</h2>
-                    <p id="detailCompany" class="text-primary-600 font-medium text-sm">Loading...</p>
-                </div>
-                <div class="flex gap-2">
-                    <button class="p-2 text-slate-400 hover:text-red-500 rounded-lg border border-transparent hover:border-red-100 hover:bg-red-50" title="Ignore Job">
-                        <i class="fa-regular fa-eye-slash"></i>
-                    </button>
-                    <button onclick="closePanel()" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg">
-                        <i class="fa-solid fa-xmark text-lg"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Panel Content -->
-            <div class="flex-1 overflow-y-auto p-6 space-y-8">
-                
-                <!-- Quick Stats -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <p class="text-xs text-slate-500 uppercase tracking-wide">Compensation</p>
-                        <p id="detailComp" class="font-medium text-slate-800 text-sm mt-1">-</p>
-                    </div>
-                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <p class="text-xs text-slate-500 uppercase tracking-wide">Location</p>
-                        <p id="detailLoc" class="font-medium text-slate-800 text-sm mt-1">-</p>
-                    </div>
-                </div>
-
-                <!-- Timeline Section (Interactive) -->
-                <div>
-                    <h3 class="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-list-check text-primary-500"></i> Status Timeline
-                    </h3>
-                    <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                        <div class="relative timeline-line pl-2 space-y-0" id="detailTimeline">
-                            <!-- Timeline items injected here -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Description Section -->
-                <div>
-                    <h3 class="font-bold text-slate-900 mb-3 border-b border-slate-100 pb-2">Description</h3>
-                    <div id="detailDesc" class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-                        <!-- Description text -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Panel Footer Actions -->
-            <div class="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-                <button onclick="closePanel()" class="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50">Close</button>
-                <button class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 shadow-sm">
-                    Open Link <i class="fa-solid fa-external-link-alt ml-1 text-xs"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Backdrop -->
-        <div id="panelBackdrop" onclick="closePanel()" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 hidden transition-opacity opacity-0"></div>
+        <!-- Include Job Detail Panel -->
+        <div id="job-detail-panel-container"></div>
 
     </div>
 
-    <!-- JavaScript Logic -->
+    <!-- JavaScript: Load Order Matters -->
+    <script src="static/js/data.js"></script>
+    <script src="static/js/helpers.js"></script>
+    <script src="static/js/renderers.js"></script>
+    <script src="static/js/handlers.js"></script>
+    <script src="static/js/app.js"></script>
+
+    <!-- Load HTML Partials -->
     <script>
-        // --- 1. MOCK DATA (Schema based on database.md) ---
-        
-        const STATUS_DEFINITIONS = [
-            "Applied", "Interview 1", "Interview 2", "Interview 3", 
-            "Post-Interview Rejection", "Offer", "Accepted", "Rejected", "Ignored/Ghosted"
-        ];
+        // Helper function to load HTML partials
+        async function loadPartial(containerId, filePath) {
+            try {
+                const response = await fetch(filePath);
+                const html = await response.text();
+                document.getElementById(containerId).innerHTML = html;
+            } catch (error) {
+                console.error(`Error loading ${filePath}:`, error);
+            }
+        }
 
-        // Helper to generate status object
-        const createStatus = (statusName, checked, dateReached) => ({
-            status: statusName,
-            checked: checked ? 1 : 0,
-            date_reached: dateReached
+        // Load all partials on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            await Promise.all([
+                loadPartial('header-container', 'parts/header.html'),
+                loadPartial('mobile-nav-container', 'parts/mobile-nav.html'),
+                loadPartial('sidebar-container', 'parts/sidebar.html'),
+                loadPartial('new-jobs-container', 'primary/new-jobs.html'),
+                loadPartial('tracker-container', 'primary/tracker.html'),
+                loadPartial('job-detail-panel-container', 'parts/job-detail-panel.html')
+            ]);
+
+            // Initialize App Logic after views are loaded
+            if (typeof initApp === 'function') {
+                initApp();
+            }
         });
-
-        // Mock Jobs
-        let jobsData = [
-            {
-                id: 1,
-                title: "Senior Python Developer",
-                company: "TechFlow Systems",
-                location: "Remote (US)",
-                compensation: "$140k - $170k",
-                description: "We are looking for an experienced Python developer...",
-                created_at: "2023-10-24",
-                ignore: 0,
-                statuses: STATUS_DEFINITIONS.map((s, i) => createStatus(s, i < 3, i < 3 ? "2023-10-25" : null)) // Checked up to Interview 2
-            },
-            {
-                id: 2,
-                title: "Data Engineer",
-                company: "DataMinds Corp",
-                location: "New York, NY",
-                compensation: "$130,000",
-                description: "Join our data infrastructure team...",
-                created_at: "2023-10-26",
-                ignore: 0,
-                statuses: STATUS_DEFINITIONS.map(s => createStatus(s, false, null)) // New Job
-            },
-            {
-                id: 3,
-                title: "Frontend Architect",
-                company: "Creative Studios",
-                location: "San Francisco, CA",
-                compensation: "$180k - $220k",
-                description: "Looking for a React/Tailwind expert...",
-                created_at: "2023-10-20",
-                ignore: 0,
-                statuses: STATUS_DEFINITIONS.map((s, i) => createStatus(s, i < 6, i < 6 ? "2023-11-01" : null)) // Has Offer
-            },
-            {
-                id: 4,
-                title: "Junior Backend Dev",
-                company: "StartUp Inc.",
-                location: "Austin, TX",
-                compensation: "$80k - $100k",
-                description: "Entry level position...",
-                created_at: "2023-11-02",
-                ignore: 0,
-                statuses: STATUS_DEFINITIONS.map(s => createStatus(s, false, null)) // New Job
-            },
-            {
-                id: 5,
-                title: "DevOps Engineer",
-                company: "CloudScale",
-                location: "Remote",
-                compensation: "$150k",
-                description: "Kubernetes expert needed...",
-                created_at: "2023-10-15",
-                ignore: 0,
-                statuses: STATUS_DEFINITIONS.map((s, i) => createStatus(s, s === "Rejected" || s === "Applied", s === "Rejected" ? "2023-10-18" : null)) // Rejected
-            }
-        ];
-
-        // --- 2. LOGIC HELPER FUNCTIONS ---
-
-        function isJobNew(job) {
-            // A job is new if "Applied" is unchecked
-            return job.statuses.find(s => s.status === "Applied").checked === 0;
-        }
-
-        function getCurrentStatus(job) {
-            const checked = job.statuses.filter(s => s.checked === 1);
-            if (checked.length === 0) return "New";
-            
-            // Priority checks for end states
-            if (checked.find(s => s.status === "Accepted")) return "Accepted";
-            if (checked.find(s => s.status === "Offer")) return "Offer";
-            if (checked.find(s => s.status === "Rejected")) return "Rejected";
-            if (checked.find(s => s.status === "Ignored/Ghosted")) return "Ghosted";
-            if (checked.find(s => s.status === "Post-Interview Rejection")) return "Rejected";
-            
-            // Otherwise return the last active stage
-            return checked[checked.length - 1].status;
-        }
-
-        // --- 3. RENDER VIEWS ---
-
-        const newJobContainer = document.getElementById('newJobsGrid');
-        
-        // Kanban Columns
-        const colApplied = document.getElementById('col-applied');
-        const colInterview = document.getElementById('col-interview');
-        const colOffer = document.getElementById('col-offer');
-        const colArchived = document.getElementById('col-archived');
-
-        function renderAll() {
-            // Clear all containers
-            newJobContainer.innerHTML = "";
-            colApplied.innerHTML = "";
-            colInterview.innerHTML = "";
-            colOffer.innerHTML = "";
-            colArchived.innerHTML = "";
-
-            let counts = { new: 0, applied: 0, interview: 0, offer: 0, archived: 0 };
-
-            jobsData.forEach(job => {
-                if (job.ignore === 1) return; 
-
-                if (isJobNew(job)) {
-                    counts.new++;
-                    renderNewJobCard(job);
-                } else {
-                    const status = getCurrentStatus(job);
-                    let targetCol = colApplied; // Default
-
-                    // Determine Column
-                    if (status.includes("Interview")) {
-                        targetCol = colInterview;
-                        counts.interview++;
-                    } else if (status === "Offer" || status === "Accepted") {
-                        targetCol = colOffer;
-                        counts.offer++;
-                    } else if (status === "Rejected" || status === "Ghosted") {
-                        targetCol = colArchived;
-                        counts.archived++;
-                    } else {
-                        // Applied
-                        counts.applied++;
-                    }
-                    
-                    renderKanbanCard(job, targetCol);
-                }
-            });
-
-            // Update Counts
-            document.getElementById('newJobCount').innerText = counts.new;
-            document.getElementById('count-applied').innerText = counts.applied;
-            document.getElementById('count-interview').innerText = counts.interview;
-            document.getElementById('count-offer').innerText = counts.offer;
-            document.getElementById('count-archived').innerText = counts.archived;
-        }
-
-        function renderNewJobCard(job) {
-            const card = document.createElement('div');
-            card.className = "bg-white rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col h-full group";
-            card.onclick = (e) => {
-                if(e.target.closest('button')) return; 
-                openJobDetails(job);
-            };
-
-            card.innerHTML = `
-                <div class="flex justify-between items-start mb-3">
-                    <div class="h-10 w-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
-                        <i class="fa-regular fa-building"></i>
-                    </div>
-                    <span class="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100">${job.created_at}</span>
-                </div>
-                
-                <h3 class="text-lg font-bold text-slate-900 leading-tight mb-1 group-hover:text-primary-600 transition-colors">${job.title}</h3>
-                <p class="text-slate-500 font-medium text-sm mb-4">${job.company}</p>
-                
-                <div class="space-y-2 mb-6 flex-1">
-                    <div class="flex items-center text-xs text-slate-500">
-                        <i class="fa-solid fa-location-dot w-5 text-center mr-1 text-slate-300"></i>
-                        ${job.location}
-                    </div>
-                    <div class="flex items-center text-xs text-slate-500">
-                        <i class="fa-solid fa-sack-dollar w-5 text-center mr-1 text-slate-300"></i>
-                        ${job.compensation || "Not listed"}
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
-                    <button onclick="ignoreJob(${job.id})" class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all">
-                        <i class="fa-regular fa-eye-slash"></i> Ignore
-                    </button>
-                    <button onclick="applyJob(${job.id})" class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-100 transition-all">
-                        Apply <i class="fa-solid fa-arrow-right"></i>
-                    </button>
-                </div>
-            `;
-            newJobContainer.appendChild(card);
-        }
-
-        function renderKanbanCard(job, container) {
-            const card = document.createElement('div');
-            card.className = "draggable-card bg-white p-4 rounded-lg border border-slate-200 shadow-sm mb-3 hover:shadow-md transition-all active:cursor-grabbing";
-            card.setAttribute("draggable", "true");
-            card.setAttribute("data-id", job.id);
-            
-            // Drag Events
-            card.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData("text/plain", job.id);
-                e.target.classList.add('dragging');
-            });
-            
-            card.addEventListener('dragend', (e) => {
-                e.target.classList.remove('dragging');
-            });
-
-            // Click Event (Details)
-            card.onclick = (e) => {
-                openJobDetails(job);
-            };
-
-            const status = getCurrentStatus(job);
-            
-            card.innerHTML = `
-                <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-bold text-slate-900 text-sm leading-tight">${job.title}</h4>
-                </div>
-                <p class="text-xs text-slate-500 font-medium mb-3">${job.company}</p>
-                <div class="flex items-center justify-between mt-2">
-                    <span class="text-[10px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">${status}</span>
-                    <i class="fa-solid fa-grip-lines text-slate-200 cursor-grab"></i>
-                </div>
-            `;
-            container.appendChild(card);
-        }
-
-        // --- 4. DRAG AND DROP LOGIC ---
-
-        function allowDrop(ev) {
-            ev.preventDefault();
-            const col = ev.target.closest('.kanban-col');
-            if (col) {
-                // Visual feedback (optional)
-            }
-        }
-
-        function drop(ev, targetStatusCategory) {
-            ev.preventDefault();
-            const jobId = parseInt(ev.dataTransfer.getData("text/plain"));
-            const job = jobsData.find(j => j.id === jobId);
-
-            if (!job) return;
-
-            // Logic: Update status based on dropped column
-            // We reset statuses and check the appropriate ones based on the drop target
-            
-            if (targetStatusCategory === 'Applied') {
-                // Reset all except Applied
-                job.statuses.forEach(s => {
-                    s.checked = (s.status === "Applied") ? 1 : 0;
-                    if(s.checked) s.date_reached = new Date().toISOString().split('T')[0];
-                });
-            } else if (targetStatusCategory === 'Interview 1') {
-                // Ensure Applied is checked, set Interview 1
-                const applied = job.statuses.find(s => s.status === 'Applied');
-                applied.checked = 1;
-                
-                // If it was already interviewing, we don't want to reset forward progress necessarily, 
-                // but for simple drag/drop grouping, let's set it to at least Interview 1
-                const int1 = job.statuses.find(s => s.status === 'Interview 1');
-                if (int1.checked === 0) {
-                    int1.checked = 1;
-                    int1.date_reached = new Date().toISOString().split('T')[0];
-                }
-                
-                // Uncheck terminal states
-                job.statuses.forEach(s => {
-                    if (["Offer", "Accepted", "Rejected", "Ignored/Ghosted"].includes(s.status)) {
-                        s.checked = 0;
-                    }
-                });
-
-            } else if (targetStatusCategory === 'Offer') {
-                // Set Offer
-                const offer = job.statuses.find(s => s.status === 'Offer');
-                offer.checked = 1;
-                offer.date_reached = new Date().toISOString().split('T')[0];
-                
-                // Uncheck Rejected
-                job.statuses.forEach(s => {
-                    if (["Rejected", "Ignored/Ghosted"].includes(s.status)) s.checked = 0;
-                });
-
-            } else if (targetStatusCategory === 'Rejected') {
-                // Set Rejected
-                const rej = job.statuses.find(s => s.status === 'Rejected');
-                rej.checked = 1;
-                rej.date_reached = new Date().toISOString().split('T')[0];
-                
-                // Uncheck Offer/Accepted
-                job.statuses.forEach(s => {
-                    if (["Offer", "Accepted"].includes(s.status)) s.checked = 0;
-                });
-            }
-
-            renderAll();
-        }
-
-
-        // --- 5. INTERACTION HANDLERS ---
-
-        function applyJob(id) {
-            const job = jobsData.find(j => j.id === id);
-            job.statuses[0].checked = 1; 
-            job.statuses[0].date_reached = new Date().toISOString().split('T')[0];
-            renderAll();
-        }
-
-        function ignoreJob(id) {
-            const job = jobsData.find(j => j.id === id);
-            job.ignore = 1;
-            renderAll();
-        }
-
-        // --- 6. TAB SWITCHING ---
-
-        function switchTab(tabName) {
-            const jobsView = document.getElementById('view-jobs');
-            const trackerView = document.getElementById('view-tracker');
-            
-            // Desktop Buttons
-            const btnJobs = document.getElementById('nav-jobs');
-            const btnTracker = document.getElementById('nav-tracker');
-            
-            // Mobile Buttons
-            const mobJobs = document.getElementById('mob-nav-jobs');
-            const mobTracker = document.getElementById('mob-nav-tracker');
-
-            if (tabName === 'jobs') {
-                jobsView.classList.remove('hidden');
-                trackerView.classList.add('hidden');
-                
-                // Styles
-                btnJobs.className = "px-4 py-1.5 rounded-md text-sm font-medium bg-white text-primary-700 shadow-sm transition-all";
-                btnTracker.className = "px-4 py-1.5 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 transition-all";
-                
-                mobJobs.classList.replace('text-slate-400', 'text-primary-600');
-                mobTracker.classList.replace('text-primary-600', 'text-slate-400');
-            } else {
-                jobsView.classList.add('hidden');
-                trackerView.classList.remove('hidden');
-
-                // Styles
-                btnTracker.className = "px-4 py-1.5 rounded-md text-sm font-medium bg-white text-primary-700 shadow-sm transition-all";
-                btnJobs.className = "px-4 py-1.5 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 transition-all";
-
-                mobTracker.classList.replace('text-slate-400', 'text-primary-600');
-                mobJobs.classList.replace('text-primary-600', 'text-slate-400');
-            }
-        }
-
-        // --- 7. DETAIL PANEL LOGIC ---
-
-        const panel = document.getElementById('jobDetailPanel');
-        const backdrop = document.getElementById('panelBackdrop');
-        const detailTimeline = document.getElementById('detailTimeline');
-
-        function openJobDetails(job) {
-            document.getElementById('detailTitle').innerText = job.title;
-            document.getElementById('detailCompany').innerText = job.company;
-            document.getElementById('detailComp').innerText = job.compensation || "Not specified";
-            document.getElementById('detailLoc').innerText = job.location;
-            document.getElementById('detailDesc').innerText = job.description;
-
-            renderTimeline(job.statuses, job.id);
-
-            backdrop.classList.remove('hidden');
-            setTimeout(() => {
-                backdrop.classList.remove('opacity-0');
-                panel.classList.remove('translate-x-full');
-            }, 10);
-        }
-
-        function closePanel() {
-            panel.classList.add('translate-x-full');
-            backdrop.classList.add('opacity-0');
-            setTimeout(() => {
-                backdrop.classList.add('hidden');
-            }, 300);
-        }
-
-        function renderTimeline(statuses, jobId) {
-            detailTimeline.innerHTML = "";
-            
-            statuses.forEach((statusItem, index) => {
-                const isActive = statusItem.checked === 1;
-                const isRejected = isActive && (statusItem.status.includes('Rejected') || statusItem.status.includes('Ghosted'));
-                
-                let dotColor = isActive ? "bg-primary-500 border-primary-500 shadow-sm" : "bg-white border-slate-300";
-                let textColor = isActive ? "text-slate-900 font-semibold" : "text-slate-400";
-                
-                if (isRejected) {
-                    dotColor = "bg-red-500 border-red-500";
-                    textColor = "text-red-600 font-bold";
-                }
-
-                const item = document.createElement('div');
-                item.className = "relative flex gap-4 pb-8 last:pb-0 group";
-                
-                item.innerHTML = `
-                    <div class="relative z-10 flex-none w-6 h-6 rounded-full border-2 ${dotColor} flex items-center justify-center transition-colors mt-0.5">
-                        ${isActive ? '<i class="fa-solid fa-check text-white text-[10px]"></i>' : ''}
-                    </div>
-                    <div class="flex-1 -mt-1">
-                        <div class="flex justify-between items-start mb-1 cursor-pointer" onclick="toggleStatus(${jobId}, ${index})">
-                            <span class="${textColor} text-sm transition-colors group-hover:text-primary-600">${statusItem.status}</span>
-                            <span class="text-xs text-slate-400 font-mono">${statusItem.date_reached || '-'}</span>
-                        </div>
-                    </div>
-                `;
-                detailTimeline.appendChild(item);
-            });
-        }
-
-        window.toggleStatus = function(jobId, statusIndex) {
-            const job = jobsData.find(j => j.id === jobId);
-            if (!job) return;
-
-            const currentStatusState = job.statuses[statusIndex].checked;
-            
-            if (currentStatusState === 0) {
-                job.statuses[statusIndex].checked = 1;
-                job.statuses[statusIndex].date_reached = new Date().toISOString().split('T')[0];
-            } else {
-                job.statuses[statusIndex].checked = 0;
-                job.statuses[statusIndex].date_reached = null;
-            }
-
-            renderTimeline(job.statuses, jobId);
-            renderAll(); 
-        };
-
-        // Initialize
-        renderAll();
-
     </script>
+
 </body>
 </html>

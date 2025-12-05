@@ -1,13 +1,18 @@
-from flask import Flask
-from flask.views import View
+from flask import Flask, send_file, send_from_directory
 
-application = Flask(__name__)
+application = Flask(__name__, static_folder='utils/frontend/static', template_folder='utils/frontend/templates')
 
-class Application(View):
-    def dispatch_request(self):
-        return 'Hello, World!'
+@application.route('/')
+def index():
+    return send_file('utils/frontend/templates/index.html')
 
-application.add_url_rule('/', view_func=Application.as_view('hello'))
+@application.route('/parts/<path:filename>')
+def serve_parts(filename):
+    return send_from_directory('utils/frontend/templates/parts', filename)
+
+@application.route('/primary/<path:filename>')
+def serve_primary(filename):
+    return send_from_directory('utils/frontend/templates/primary', filename)
 
 if __name__ == '__main__':
-    application.run()
+    application.run(debug=True)
