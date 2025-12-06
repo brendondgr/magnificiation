@@ -1,12 +1,16 @@
 // --- MAIN APPLICATION INITIALIZATION ---
 
 // Exposed initialization function
-function initApp() {
+// Exposed initialization function
+async function initApp() {
     // Initialize DOM references
     initializeElements();
 
     // Initialize Theme
     initTheme();
+
+    // Fetch Data
+    await fetchJobs();
 
     // Initial render
     renderAll();

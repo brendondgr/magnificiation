@@ -1,5 +1,43 @@
 // --- RENDER FUNCTIONS ---
 
+// --- HELPER FUNCTIONS ---
+
+// Format date from datetime string to YYYY-MM-DD
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0]; // YYYY-MM-DD
+}
+
+// Validate and format compensation
+function formatCompensation(comp) {
+    if (!comp || comp === 'nan' || comp.toLowerCase().includes('nan') || comp === 'NaN') {
+        return 'Not Listed';
+    }
+    return comp;
+}
+
+// Process description HTML
+function formatDescription(desc) {
+    // Return null for empty, null, or undefined descriptions
+    if (!desc) return null;
+
+    // Trim and check if it's actually empty
+    const trimmed = desc.trim();
+    if (trimmed === '' || trimmed.length === 0) return null;
+
+    // Convert markdown-style bold to HTML
+    let formatted = trimmed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    // Clean up excessive whitespace while preserving line breaks
+    formatted = formatted.replace(/\n{3,}/g, '\n\n');
+
+    // Convert newlines to <br> tags for proper rendering
+    formatted = formatted.replace(/\n/g, '<br>');
+
+    return formatted;
+}
+
 let newJobContainer;
 
 // Kanban Columns (will be initialized after DOM loads)
@@ -61,9 +99,16 @@ function renderAll() {
 }
 
 function renderNewJobCard(job) {
+    // Format data using helper functions
+    const formattedDate = formatDate(job.created_at);
+    const formattedCompensation = formatCompensation(job.compensation);
+    const formattedDescription = formatDescription(job.description);
+
     // Card Container - Improved grayscale contrast
     const card = document.createElement('div');
-    card.className = "bg-white dark:bg-neon-gray-light rounded-xl border border-slate-300 dark:border-neon-border-light shadow-md hover:shadow-xl hover:border-slate-400 dark:hover:border-neon-blue dark:hover:shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all flex flex-col h-[450px] group relative overflow-hidden duration-300";
+    // Add fixed height for cards with descriptions, auto height for those without
+    const cardHeight = formattedDescription ? "h-[450px]" : "";
+    card.className = `bg-white dark:bg-neon-gray-light rounded-xl border border-slate-300 dark:border-neon-border-light shadow-md hover:shadow-xl hover:border-slate-400 dark:hover:border-neon-blue dark:hover:shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all flex flex-col ${cardHeight} group relative overflow-hidden duration-300`;
 
     // Prevent card click when clicking interactive elements
     card.onclick = (e) => {
@@ -71,31 +116,38 @@ function renderNewJobCard(job) {
         openJobDetails(job);
     };
 
+    // Build the description section only if there's content
+    const descriptionSection = formattedDescription ? `
+        <!-- Scrolling Description Area -->
+        <div class="flex-1 p-5 overflow-y-auto bg-white dark:bg-neon-gray-light text-sm text-slate-600 dark:text-gray-300 leading-relaxed custom-scrollbar relative">
+            ${formattedDescription}
+        </div>
+    ` : '';
+
     card.innerHTML = `
         <!-- Header Section -->
         <div class="px-5 py-4 bg-slate-50 dark:bg-neon-gray/80 border-b border-slate-200 dark:border-neon-border">
-            <div class="flex justify-between items-start mb-2">
-                <h3 class="text-lg font-bold text-slate-900 dark:text-white leading-tight pr-2 group-hover:text-primary-700 dark:group-hover:text-neon-blue transition-colors line-clamp-2">${job.title}</h3>
-                <span class="flex-none text-[10px] font-bold tracking-wide text-slate-500 dark:text-gray-400 bg-white dark:bg-neon-border/30 px-2 py-1 rounded border border-slate-200 dark:border-neon-border-light shadow-sm">${job.created_at}</span>
+            <!-- Full Width Title -->
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white leading-tight mb-3 group-hover:text-primary-700 dark:group-hover:text-neon-blue transition-colors">${job.title}</h3>
+            
+            <!-- Company and Date Row -->
+            <div class="flex justify-between items-center mb-2">
+                <div class="font-bold text-slate-700 dark:text-gray-300 text-sm">${job.company}</div>
+                <span class="text-[10px] font-bold tracking-wide text-slate-500 dark:text-gray-400 bg-white dark:bg-neon-border/30 px-2 py-1 rounded border border-slate-200 dark:border-neon-border-light shadow-sm">${formattedDate}</span>
             </div>
             
-            <div class="font-bold text-slate-700 dark:text-gray-300 text-sm mb-1">${job.company}</div>
-            
             <!-- Quick Info Tags -->
-            <div class="flex flex-wrap gap-2 pt-1 text-xs">
+            <div class="flex flex-wrap gap-2 text-xs">
                 <span class="flex items-center px-1.5 py-0.5 rounded-md bg-white dark:bg-neon-border/30 border border-slate-200 dark:border-neon-border-light text-slate-600 dark:text-gray-300 font-medium">
                     <i class="fa-solid fa-location-dot mr-1.5 text-slate-400 dark:text-gray-500"></i>${job.location}
                 </span>
                 <span class="flex items-center px-1.5 py-0.5 rounded-md bg-white dark:bg-neon-border/30 border border-slate-200 dark:border-neon-border-light text-slate-600 dark:text-gray-300 font-medium">
-                     <i class="fa-solid fa-sack-dollar mr-1.5 text-slate-400 dark:text-gray-500"></i>${job.compensation || "Not listed"}
+                     <i class="fa-solid fa-sack-dollar mr-1.5 text-slate-400 dark:text-gray-500"></i>${formattedCompensation}
                 </span>
             </div>
         </div>
         
-        <!-- Scrolling Description Area -->
-        <div class="flex-1 p-5 overflow-y-auto bg-white dark:bg-neon-gray-light text-sm text-slate-600 dark:text-gray-300 leading-relaxed whitespace-pre-line custom-scrollbar relative">
-            ${job.description}
-        </div>
+        ${descriptionSection}
 
         <!-- Action Buttons Footer -->
         <div class="p-4 bg-slate-50 dark:bg-neon-gray/80 border-t border-slate-200 dark:border-neon-border grid grid-cols-3 gap-3">

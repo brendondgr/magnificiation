@@ -34,3 +34,22 @@
     opacity: 0.5;
     transform: scale(0.98);
 }
+
+/* Responsive Grid Layout for New Jobs */
+#newJobsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+    #newJobsGrid {
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    #newJobsGrid {
+        grid-template-columns: 1fr;
+    }
+}
