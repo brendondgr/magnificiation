@@ -26,14 +26,62 @@ function formatDescription(desc) {
     const trimmed = desc.trim();
     if (trimmed === '' || trimmed.length === 0) return null;
 
-    // Convert markdown-style bold to HTML
-    let formatted = trimmed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    let formatted = trimmed;
 
-    // Clean up excessive whitespace while preserving line breaks
+    // Remove escaped backslashes (e.g., \- becomes -)
+    formatted = formatted.replace(/\\(.)/g, '$1');
+
+    // Convert markdown-style bold to HTML
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    // Clean up excessive blank lines (3+ newlines become 2)
     formatted = formatted.replace(/\n{3,}/g, '\n\n');
 
-    // Convert newlines to <br> tags for proper rendering
-    formatted = formatted.replace(/\n/g, '<br>');
+    // Convert markdown headings to HTML (must be done before list processing)
+    // Process from most specific (####) to least specific (#) to avoid conflicts
+    formatted = formatted.replace(/^####\s+(.+)$/gm, '<h4 class="font-bold text-base text-slate-800 dark:text-white mt-4 mb-2">$1</h4>');
+    formatted = formatted.replace(/^###\s+(.+)$/gm, '<h3 class="font-bold text-lg text-slate-800 dark:text-white mt-4 mb-2">$1</h3>');
+    formatted = formatted.replace(/^##\s+(.+)$/gm, '<h2 class="font-bold text-xl text-slate-800 dark:text-white mt-4 mb-2">$1</h2>');
+    formatted = formatted.replace(/^#\s+(.+)$/gm, '<h1 class="font-bold text-2xl text-slate-800 dark:text-white mt-4 mb-2">$1</h1>');
+
+    // Convert bullet lists to HTML
+    // Match lines starting with * or - (with optional whitespace)
+    const lines = formatted.split('\n');
+    let inList = false;
+    const processedLines = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const isBullet = /^\s*[\*\-]\s+(.+)/.test(line);
+
+        if (isBullet) {
+            const content = line.replace(/^\s*[\*\-]\s+/, '');
+            if (!inList) {
+                processedLines.push('<ul class="list-disc list-inside space-y-1 my-2">');
+                inList = true;
+            }
+            processedLines.push(`<li class="ml-2">${content}</li>`);
+        } else {
+            if (inList) {
+                processedLines.push('</ul>');
+                inList = false;
+            }
+            processedLines.push(line);
+        }
+    }
+
+    // Close list if still open
+    if (inList) {
+        processedLines.push('</ul>');
+    }
+
+    formatted = processedLines.join('\n');
+
+    // Convert remaining newlines to <br> tags (but not inside lists or headings)
+    formatted = formatted.replace(/\n(?![<\/]?ul|[<\/]?li|[<\/]?h[1-6])/g, '<br>');
+
+    // Clean up any double <br> tags that might have been created
+    formatted = formatted.replace(/(<br>\s*){3,}/g, '<br><br>');
 
     return formatted;
 }
