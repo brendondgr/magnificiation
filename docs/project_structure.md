@@ -13,9 +13,24 @@ magnificiation/
 ├── utils/                             # Main Python utilities container
 │   ├── backend/                       # Backend scraping and Flask API
 │   │   ├── scrapers/                  # Job scraping modules
+│   │   │   ├── __init__.py           # Package exports
+│   │   │   ├── scraper_config.py     # Configuration constants
+│   │   │   ├── task_generator.py     # Generate scraping tasks
+│   │   │   ├── jobspy_wrapper.py     # Wrapper for jobspy library
+│   │   │   ├── concurrent_scraper.py # ThreadPool execution
+│   │   │   ├── data_processor.py     # Deduplication and cleaning
+│   │   │   ├── job_filter.py         # Filter jobs by config
+│   │   │   ├── scraping_service.py   # Main orchestration service
+│   │   │   └── scraper_utils.py      # Helper utilities
 │   │   ├── processors/                # Data processing and enrichment
 │   │   ├── routes/                    # Flask API route blueprints
 │   │   ├── database/                  # Database models and operations
+│   │   │   ├── __init__.py           # Package exports
+│   │   │   ├── config.py             # Database configuration
+│   │   │   ├── models.py             # SQLAlchemy ORM models
+│   │   │   ├── init_db.py            # Database initialization
+│   │   │   ├── operations.py         # CRUD operations
+│   │   │   └── utils.py              # Helper functions
 │   │   ├── services/                  # Business logic layer
 │   │   └── tests/                     # Backend unit tests
 │   ├── frontend/                      # Frontend assets and templates
@@ -36,9 +51,11 @@ magnificiation/
 │
 ├── logs/                              # Application logs storage
 │
-├── data/                              # Data storage
+├── data/                              # Data storage (SQLite database)
+│   └── magnificiation.db             # Main SQLite database
 │
 ├── config/                            # User and environment configurations
+│   └── jobs_config.json              # Job titles and filter keywords
 │
 ├── docs/                              # Documentation
 │
@@ -50,6 +67,7 @@ magnificiation/
 ```
 
 ---
+
 
 ## Key Components Explained
 

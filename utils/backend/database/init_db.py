@@ -1,0 +1,91 @@
+"""
+Database Initialization and Session Management for Magnification Job Search Application.
+
+This module handles:
+- SQLAlchemy engine initialization
+- Session factory creation
+- Database table creation
+"""
+
+from contextlib import contextmanager
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+
+from .config import DATABASE_URL, ENGINE_OPTIONS, SESSION_OPTIONS
+from .models import Base
+
+
+# Create the database engine
+engine = create_engine(DATABASE_URL, **ENGINE_OPTIONS)
+
+# Create session factory
+SessionLocal = sessionmaker(bind=engine, **SESSION_OPTIONS)
+
+
+def init_database():
+    """
+    Initialize the database by creating all tables.
+    
+    This function should be called once at application startup.
+    Tables are only created if they don't already exist.
+    """
+    Base.metadata.create_all(bind=engine)
+
+
+def get_db_session() -> Session:
+    """
+    Get a new database session.
+    
+    Returns:
+        Session: A new SQLAlchemy session instance
+    
+    Note:
+        The caller is responsible for closing the session.
+        Consider using get_db_context() for automatic cleanup.
+    """
+    return SessionLocal()
+
+
+@contextmanager
+def get_db_context():
+    """
+    Context manager for database sessions.
+    
+    Provides automatic session cleanup and rollback on errors.
+    
+    Usage:
+        with get_db_context() as db:
+            jobs = db.query(Job).all()
+    
+    Yields:
+        Session: A SQLAlchemy session that auto-commits on success,
+                 rolls back on exception, and always closes.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def drop_all_tables():
+    """
+    Drop all database tables.
+    
+    WARNING: This will delete all data! Use only for testing/development.
+    """
+    Base.metadata.drop_all(bind=engine)
+
+
+def reset_database():
+    """
+    Reset the database by dropping and recreating all tables.
+    
+    WARNING: This will delete all data! Use only for testing/development.
+    """
+    drop_all_tables()
+    init_database()

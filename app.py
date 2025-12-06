@@ -1,6 +1,12 @@
 from flask import Flask, send_file, send_from_directory
 
+# Initialize database on import
+from utils.backend.database import init_database
+
 application = Flask(__name__, static_folder='utils/frontend/static', template_folder='utils/frontend/templates')
+
+# Initialize database tables
+init_database()
 
 @application.route('/')
 def index():
