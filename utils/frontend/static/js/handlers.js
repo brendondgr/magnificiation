@@ -81,8 +81,33 @@ function applyJob(id) {
 
 function ignoreJob(id) {
     const job = jobsData.find(j => j.id === id);
+    if (!job) return;
+
+    // Update locally first for immediate feedback
     job.ignore = 1;
     renderAll();
+
+    // Send request to backend to persist the change
+    fetch(`/api/jobs/${id}/ignore`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ignore: 1 })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to ignore job');
+        }
+        return response.json();
+    })
+    .catch(error => {
+        console.error('Error ignoring job:', error);
+        // Revert the local change if the request fails
+        job.ignore = 0;
+        renderAll();
+        alert('Failed to ignore job. Please try again.');
+    });
 }
 
 // Tab Switching

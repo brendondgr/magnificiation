@@ -46,54 +46,85 @@ def load_filter_config() -> Dict[str, Any]:
         return {'job_titles': [], 'description_keywords': []}
 
 
-def apply_title_filter(job: Dict[str, Any], allowed_titles: List[str]) -> bool:
+def apply_title_filter(job: Dict[str, Any], allowed_titles: List[Any]) -> bool:
     """
-    Check if job title matches any in the allowed list.
+    Check if job title matches allowed criteria.
+    Supports flat list (OR) or nested list (AND groups of OR terms).
     
     Args:
         job: Job dictionary
-        allowed_titles: List of allowed job title patterns (case-insensitive)
+        allowed_titles: List of allowed job title patterns (str) or List of Lists (str)
     
     Returns:
-        bool: True if job should be KEPT (matches filter)
+        bool: True if job should be KEPT
     """
     if not allowed_titles:
-        # No title filter configured, keep all jobs
         return True
     
     job_title = str(job.get('title', '')).lower()
     
-    # Check if job title contains any of the allowed patterns
-    for allowed in allowed_titles:
-        if allowed.lower() in job_title:
-            return True
+    # Check structure: matches if ALL groups are satisfied
+    # If flat list, treat as single group [allowed_titles]
     
-    return False
+    # Detect if nested
+    is_nested = allowed_titles and isinstance(allowed_titles[0], list)
+    
+    groups = allowed_titles if is_nested else [allowed_titles]
+    
+    for group in groups:
+        # For this group (AND condition), we need at least one match (OR condition)
+        # Empty group? If user configured an empty group, does it match everything or nothing?
+        # Usually empty filter implies no restriction, but here explicit empty group might mean "match nothing" 
+        # or it might be an artifact. Let's assume empty group is ignored (matches).
+        if not group:
+            continue
+            
+        group_match = False
+        for pattern in group:
+            if str(pattern).lower() in job_title:
+                group_match = True
+                break
+        
+        if not group_match:
+            return False # Failed one of the AND groups
+            
+    return True
 
 
-def apply_keyword_filter(job: Dict[str, Any], keywords: List[str]) -> bool:
+def apply_keyword_filter(job: Dict[str, Any], keywords: List[Any]) -> bool:
     """
-    Check if job description contains any required keywords.
+    Check if job description matches required keywords.
+    Supports flat list (OR) or nested list (AND groups of OR terms).
     
     Args:
         job: Job dictionary
-        keywords: List of required keywords (case-insensitive)
+        keywords: List of keywords (str) or List of Lists (str)
     
     Returns:
-        bool: True if job should be KEPT (contains at least one keyword)
+        bool: True if job should be KEPT
     """
     if not keywords:
-        # No keyword filter configured, keep all jobs
         return True
     
     description = str(job.get('description', '')).lower()
     
-    # Check if description contains any of the required keywords
-    for keyword in keywords:
-        if keyword.lower() in description:
-            return True
+    is_nested = keywords and isinstance(keywords[0], list)
+    groups = keywords if is_nested else [keywords]
     
-    return False
+    for group in groups:
+        if not group:
+            continue
+            
+        group_match = False
+        for keyword in group:
+            if str(keyword).lower() in description:
+                group_match = True
+                break
+        
+        if not group_match:
+            return False
+            
+    return True
 
 
 def apply_filters(job: Dict[str, Any], filter_config: Optional[Dict[str, Any]] = None) -> bool:

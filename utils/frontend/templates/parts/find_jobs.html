@@ -1,0 +1,134 @@
+<div id="findJobsModal" class="modal-overlay">
+    <div class="modal-content transition-all duration-300">
+        <!-- Config View -->
+        <div id="modalConfigView">
+            <!-- Header -->
+            <div class="modal-header">
+                <h2 class="text-xl font-bold text-slate-800 dark:text-white">Find Jobs Configuration</h2>
+                <button class="modal-close text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body custom-scrollbar">
+                <!-- Search Terms -->
+                <div class="form-group">
+                    <label class="form-label">Search Terms <span class="text-xs text-slate-500 font-normal">(What to search for)</span></label>
+                    <div class="tag-input-container" id="searchTermsInput">
+                        <input type="text" class="tag-input-field" placeholder="Add search term and press Enter...">
+                    </div>
+                </div>
+
+                <!-- Hours Old -->
+                <div class="form-group">
+                    <label class="form-label">Job Posting Age</label>
+                    <div class="flex items-center gap-4 mb-2">
+                        <input type="range" id="hoursOldSlider" min="0" max="5" step="1" class="flex-1">
+                        <span id="hoursOldDisplay" class="text-sm font-bold text-primary-600 dark:text-neon-blue w-32 text-right">24 hours</span>
+                    </div>
+                </div>
+
+                <!-- Sites -->
+                <div class="form-group">
+                    <label class="form-label">Sites to Scrape</label>
+                    <div class="checkbox-grid" id="sitesContainer">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Filters Divider -->
+                <div class="border-t border-slate-200 dark:border-neon-border my-6"></div>
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Filters</h3>
+
+                <!-- Job Title Keywords -->
+                <div class="form-group">
+                    <div class="flex justify-between items-end mb-2">
+                        <label class="form-label mb-0">Title Keywords <span class="text-xs text-slate-500 font-normal block sm:inline">(Match ANY keyword in EACH section)</span></label>
+                        <button type="button" id="addTitleSectionBtn" class="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-neon-gray hover:bg-slate-200 dark:hover:bg-neon-border text-primary-600 dark:text-neon-blue font-bold transition-colors">
+                            + Add AND Section
+                        </button>
+                    </div>
+                    <!-- Container for dynamic sections -->
+                    <div id="jobTitlesSectionsContainer" class="flex flex-col gap-3">
+                         <!-- Sections will be injected here via JS -->
+                    </div>
+                </div>
+
+                <!-- Description Keywords -->
+                <div class="form-group">
+                    <div class="flex justify-between items-end mb-2">
+                        <label class="form-label mb-0">Description Keywords <span class="text-xs text-slate-500 font-normal block sm:inline">(Match ANY keyword in EACH section)</span></label>
+                        <button type="button" id="addDescSectionBtn" class="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-neon-gray hover:bg-slate-200 dark:hover:bg-neon-border text-primary-600 dark:text-neon-blue font-bold transition-colors">
+                            + Add AND Section
+                        </button>
+                    </div>
+                     <!-- Container for dynamic sections -->
+                    <div id="descKeywordsSectionsContainer" class="flex flex-col gap-3">
+                        <!-- Sections will be injected here via JS -->
+                    </div>
+                </div>
+                
+                 <!-- Results Wanted -->
+                <div class="form-group">
+                    <label class="form-label">Max Results Per Search</label>
+                    <input type="number" id="resultsWantedInput" class="w-24 px-3 py-2 border border-slate-300 dark:border-neon-border rounded-lg bg-white dark:bg-neon-gray text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" value="20" min="5" max="50">
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer">
+                <button class="modal-close px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-neon-border/50 transition-colors">
+                    Cancel
+                </button>
+                <button id="startScrapeBtn" class="px-6 py-2 rounded-lg text-sm font-bold bg-primary-600 dark:bg-neon-blue text-white dark:text-black hover:bg-primary-700 dark:hover:bg-cyan-400 shadow-md transition-all flex items-center gap-2">
+                     Start Scraping <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Progress View (Hidden initially) -->
+        <div id="modalProgressView" class="hidden h-full flex flex-col">
+            <div class="modal-header">
+                <h2 class="text-xl font-bold text-slate-800 dark:text-white">Scraping in Progress</h2>
+            </div>
+            <div class="modal-body flex-1 flex flex-col justify-center items-center gap-6">
+                
+                <!-- Progress Ring/Icon -->
+                <div class="relative w-24 h-24">
+                    <div class="absolute inset-0 border-4 border-slate-200 dark:border-neon-gray-light rounded-full"></div>
+                    <div class="absolute inset-0 border-4 border-primary-500 dark:border-neon-blue rounded-full border-t-transparent animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span id="progressPercent" class="text-xl font-bold text-slate-700 dark:text-white">0%</span>
+                    </div>
+                </div>
+
+                <!-- Status Text -->
+                <div class="text-center">
+                    <h3 id="progressStage" class="text-lg font-bold text-slate-900 dark:text-white mb-2">Initializing...</h3>
+                    <p id="progressMessage" class="text-sm text-slate-500 dark:text-gray-400 max-w-sm mx-auto">Please wait while we search for jobs...</p>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-2 gap-4 w-full max-w-sm">
+                    <div class="bg-slate-50 dark:bg-neon-gray/50 p-4 rounded-lg text-center border border-slate-200 dark:border-neon-border">
+                        <div id="jobsFoundCount" class="text-2xl font-bold text-primary-600 dark:text-neon-blue">0</div>
+                        <div class="text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wide">Jobs Found</div>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-neon-gray/50 p-4 rounded-lg text-center border border-slate-200 dark:border-neon-border">
+                        <div id="jobsSavedCount" class="text-2xl font-bold text-green-600 dark:text-neon-green">0</div>
+                        <div class="text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wide">New Jobs</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Completed Actions -->
+            <div id="progressActions" class="modal-footer hidden">
+                <button id="progressCloseBtn" class="w-full px-6 py-2 rounded-lg text-sm font-bold bg-primary-600 dark:bg-neon-blue text-white dark:text-black hover:bg-primary-700 dark:hover:bg-cyan-400 transition-all">
+                    View Jobs
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>

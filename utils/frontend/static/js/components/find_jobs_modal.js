@@ -3,8 +3,8 @@ const FindJobsModal = {
     _pollInterval: null,
     _config: {
         search_terms: [],
-        job_titles: [],
-        description_keywords: [],
+        job_titles: [], // Will be [[kw1, kw2], [kw3]]
+        description_keywords: [], // Will be [[kw1, kw2], [kw3]]
         sites: [],
         hours_old: 24,
         results_wanted: 20
@@ -20,156 +20,43 @@ const FindJobsModal = {
     ],
 
     init() {
-        this.render();
-        this.attachEventListeners();
+        // Pre-load HTML if helpful, or just wait for open()
+        // We'll load on first open to ensure DOM is ready and not block init
     },
 
-    render() {
+    async render() {
         if (this._modalElement) return;
 
-        const html = `
-            <div id="findJobsModal" class="modal-overlay">
-                <div class="modal-content transition-all duration-300">
-                    <!-- Config View -->
-                    <div id="modalConfigView">
-                        <!-- Header -->
-                        <div class="modal-header">
-                            <h2 class="text-xl font-bold text-slate-800 dark:text-white">Find Jobs Configuration</h2>
-                            <button class="modal-close text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
-                                <i class="fa-solid fa-times text-xl"></i>
-                            </button>
-                        </div>
+        try {
+            const response = await fetch('/parts/find_jobs.html');
+            if (!response.ok) throw new Error("Failed to load modal template");
+            const html = await response.text();
 
-                        <!-- Body -->
-                        <div class="modal-body custom-scrollbar">
-                            <!-- Search Terms -->
-                            <div class="form-group">
-                                <label class="form-label">Search Terms <span class="text-xs text-slate-500 font-normal">(What to search for)</span></label>
-                                <div class="tag-input-container" id="searchTermsInput">
-                                    <input type="text" class="tag-input-field" placeholder="Add search term and press Enter...">
-                                </div>
-                            </div>
+            const container = document.createElement('div');
+            container.innerHTML = html;
+            this._modalElement = container.firstElementChild;
+            document.body.appendChild(this._modalElement);
 
-                            <!-- Hours Old -->
-                            <div class="form-group">
-                                <label class="form-label">Job Posting Age</label>
-                                <div class="flex items-center gap-4 mb-2">
-                                    <input type="range" id="hoursOldSlider" min="0" max="5" step="1" class="flex-1">
-                                    <span id="hoursOldDisplay" class="text-sm font-bold text-primary-600 dark:text-neon-blue w-32 text-right">24 hours</span>
-                                </div>
-                            </div>
-
-                            <!-- Sites -->
-                            <div class="form-group">
-                                <label class="form-label">Sites to Scrape</label>
-                                <div class="checkbox-grid" id="sitesContainer">
-                                    <!-- Populated dynamically -->
-                                </div>
-                            </div>
-                            
-                            <!-- Filters Divider -->
-                            <div class="border-t border-slate-200 dark:border-neon-border my-6"></div>
-                            <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Filters</h3>
-
-                            <!-- Job Title Keywords -->
-                            <div class="form-group">
-                                <label class="form-label">Title Keywords <span class="text-xs text-slate-500 font-normal">(Keep only jobs with these words in title)</span></label>
-                                <div class="tag-input-container" id="jobTitlesInput">
-                                    <input type="text" class="tag-input-field" placeholder="Add keyword...">
-                                </div>
-                            </div>
-
-                            <!-- Description Keywords -->
-                            <div class="form-group">
-                                <label class="form-label">Description Keywords <span class="text-xs text-slate-500 font-normal">(Keep only jobs with these words in description)</span></label>
-                                <div class="tag-input-container" id="descKeywordsInput">
-                                    <input type="text" class="tag-input-field" placeholder="Add keyword...">
-                                </div>
-                            </div>
-                            
-                             <!-- Results Wanted -->
-                            <div class="form-group">
-                                <label class="form-label">Max Results Per Search</label>
-                                <input type="number" id="resultsWantedInput" class="w-24 px-3 py-2 border border-slate-300 dark:border-neon-border rounded-lg bg-white dark:bg-neon-gray text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" value="20" min="5" max="50">
-                            </div>
-                        </div>
-
-                        <!-- Footer -->
-                        <div class="modal-footer">
-                            <button class="modal-close px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-neon-border/50 transition-colors">
-                                Cancel
-                            </button>
-                            <button id="startScrapeBtn" class="px-6 py-2 rounded-lg text-sm font-bold bg-primary-600 dark:bg-neon-blue text-white dark:text-black hover:bg-primary-700 dark:hover:bg-cyan-400 shadow-md transition-all flex items-center gap-2">
-                                 Start Scraping <i class="fa-solid fa-arrow-right"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Progress View (Hidden initially) -->
-                    <div id="modalProgressView" class="hidden h-full flex flex-col">
-                        <div class="modal-header">
-                            <h2 class="text-xl font-bold text-slate-800 dark:text-white">Scraping in Progress</h2>
-                        </div>
-                        <div class="modal-body flex-1 flex flex-col justify-center items-center gap-6">
-                            
-                            <!-- Progress Ring/Icon -->
-                            <div class="relative w-24 h-24">
-                                <div class="absolute inset-0 border-4 border-slate-200 dark:border-neon-gray-light rounded-full"></div>
-                                <div class="absolute inset-0 border-4 border-primary-500 dark:border-neon-blue rounded-full border-t-transparent animate-spin"></div>
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <span id="progressPercent" class="text-xl font-bold text-slate-700 dark:text-white">0%</span>
-                                </div>
-                            </div>
-
-                            <!-- Status Text -->
-                            <div class="text-center">
-                                <h3 id="progressStage" class="text-lg font-bold text-slate-900 dark:text-white mb-2">Initializing...</h3>
-                                <p id="progressMessage" class="text-sm text-slate-500 dark:text-gray-400 max-w-sm mx-auto">Please wait while we search for jobs...</p>
-                            </div>
-
-                            <!-- Stats -->
-                            <div class="grid grid-cols-2 gap-4 w-full max-w-sm">
-                                <div class="bg-slate-50 dark:bg-neon-gray/50 p-4 rounded-lg text-center border border-slate-200 dark:border-neon-border">
-                                    <div id="jobsFoundCount" class="text-2xl font-bold text-primary-600 dark:text-neon-blue">0</div>
-                                    <div class="text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wide">Jobs Found</div>
-                                </div>
-                                <div class="bg-slate-50 dark:bg-neon-gray/50 p-4 rounded-lg text-center border border-slate-200 dark:border-neon-border">
-                                    <div id="jobsSavedCount" class="text-2xl font-bold text-green-600 dark:text-neon-green">0</div>
-                                    <div class="text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wide">New Jobs</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Completed Actions -->
-                        <div id="progressActions" class="modal-footer hidden">
-                            <button id="progressCloseBtn" class="w-full px-6 py-2 rounded-lg text-sm font-bold bg-primary-600 dark:bg-neon-blue text-white dark:text-black hover:bg-primary-700 dark:hover:bg-cyan-400 transition-all">
-                                View Jobs
-                            </button>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        `;
-
-        const container = document.createElement('div');
-        container.innerHTML = html;
-        this._modalElement = container.firstElementChild;
-        document.body.appendChild(this._modalElement);
-
-        // Render Sites options
-        this.renderSitesOptions();
+            this.renderSitesOptions();
+            this.attachEventListeners();
+        } catch (e) {
+            console.error("Error rendering Find Jobs Modal:", e);
+            alert("Failed to load Find Jobs module.");
+        }
     },
 
     renderSitesOptions() {
+        if (!this._modalElement) return;
         const sites = ["indeed", "linkedin", "glassdoor", "zip_recruiter", "google"];
         const container = document.getElementById('sitesContainer');
-        container.innerHTML = sites.map(site => `
-            <label class="checkbox-item cursor-pointer">
-                <input type="checkbox" name="site" value="${site}" class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700">
-                <span class="capitalize">${site.replace('_', ' ')}</span>
-            </label>
-        `).join('');
+        if (container) {
+            container.innerHTML = sites.map(site => `
+                <label class="checkbox-item cursor-pointer">
+                    <input type="checkbox" name="site" value="${site}" class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                    <span class="capitalize">${site.replace('_', ' ')}</span>
+                </label>
+            `).join('');
+        }
     },
 
     attachEventListeners() {
@@ -191,10 +78,14 @@ const FindJobsModal = {
             document.getElementById('hoursOldDisplay').dataset.value = option.value;
         };
 
-        // Tag Inputs
+        // Tag Inputs (Simple List)
         this.setupTagInput('searchTermsInput', 'search_terms');
-        this.setupTagInput('jobTitlesInput', 'job_titles');
-        this.setupTagInput('descKeywordsInput', 'description_keywords');
+
+        // Section Inputs (Nested Lists)
+        // We don't attach listener here for sections because they are dynamic.
+        // Instead we bind the "Add Section" buttons.
+        document.getElementById('addTitleSectionBtn').onclick = () => this.addSection('job_titles', 'jobTitlesSectionsContainer');
+        document.getElementById('addDescSectionBtn').onclick = () => this.addSection('description_keywords', 'descKeywordsSectionsContainer');
 
         // Start Scrape
         document.getElementById('startScrapeBtn').onclick = () => this.saveAndStart();
@@ -206,8 +97,10 @@ const FindJobsModal = {
         };
     },
 
+    /* --- Simple Tag Input (Flat List) --- */
     setupTagInput(containerId, configKey) {
         const container = document.getElementById(containerId);
+        if (!container) return;
         const input = container.querySelector('input');
 
         const createTag = (text) => {
@@ -244,10 +137,137 @@ const FindJobsModal = {
                 removeTag(lastTag);
             }
         };
-        renderTags();
+        // Initial render called by populateForm
     },
 
+    /* --- Nested Section Logic --- */
+
+    // Normalize config to be [[strings]]
+    normalizeConfig(key) {
+        let val = this._config[key];
+        if (!Array.isArray(val)) {
+            this._config[key] = [[]];
+        } else if (val.length > 0 && typeof val[0] === 'string') {
+            // Convert flat list to single group
+            this._config[key] = [val];
+        } else if (val.length === 0) {
+            // Keep empty, renderSections will handle default
+        }
+    },
+
+    renderSections(containerId, configKey) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+
+        // Ensure at least 1 section if empty? No, let user control. 
+        // But if completely empty, the user sees nothing.
+        // Let's ensure at least one empty section if the array is empty.
+        if (this._config[configKey].length === 0) {
+            this._config[configKey].push([]);
+        }
+
+        this._config[configKey].forEach((sectionParams, index) => {
+            const sectionEl = this.createSectionElement(sectionParams, index, configKey, containerId);
+            container.appendChild(sectionEl);
+        });
+    },
+
+    createSectionElement(params, index, configKey, containerId) {
+        const sectionDiv = document.createElement('div');
+        sectionDiv.className = "p-3 bg-slate-50 dark:bg-neon-gray/30 border border-slate-200 dark:border-neon-border/50 rounded-lg relative group";
+
+        // Delete Section Button (Absolute top right)
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = "absolute top-2 right-2 text-slate-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100";
+        deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+        deleteBtn.onclick = () => {
+            this.removeSection(configKey, index, containerId);
+        };
+        sectionDiv.appendChild(deleteBtn);
+
+        // Label
+        const label = document.createElement('div');
+        label.className = "text-[10px] font-bold text-slate-400 uppercase mb-2";
+        label.innerText = `Group ${index + 1} (OR)`;
+        sectionDiv.appendChild(label);
+
+        // Tags Container
+        const tagsContainer = document.createElement('div');
+        tagsContainer.className = "flex flex-wrap gap-2 items-center";
+
+        // Render Existing Tags
+        params.forEach(tagText => {
+            const tag = document.createElement('div');
+            tag.className = 'tag-pill !bg-white dark:!bg-neon-gray !border-slate-200 dark:!border-neon-border';
+            tag.innerHTML = `${tagText} <span class="tag-remove">&times;</span>`;
+            tag.querySelector('.tag-remove').onclick = () => {
+                this.removeTagFromSection(configKey, index, tagText, containerId);
+            };
+            tagsContainer.appendChild(tag);
+        });
+
+        // Input
+        const input = document.createElement('input');
+        input.type = "text";
+        input.className = "bg-transparent text-sm min-w-[100px] outline-none text-slate-700 dark:text-gray-300 placeholder:text-slate-400";
+        input.placeholder = "Add keyword...";
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const val = input.value.trim();
+                if (val) {
+                    this.addTagToSection(configKey, index, val, containerId);
+                    // Focus handling is done in renderSections/addTagToSection
+                }
+            } else if (e.key === 'Backspace' && input.value === '' && params.length > 0) {
+                // Remove last tag
+                const lastTag = params[params.length - 1];
+                this.removeTagFromSection(configKey, index, lastTag, containerId);
+            }
+        };
+
+        tagsContainer.appendChild(input);
+        sectionDiv.appendChild(tagsContainer);
+
+        return sectionDiv;
+    },
+
+    addSection(configKey, containerId) {
+        this._config[configKey].push([]);
+        this.renderSections(containerId, configKey);
+    },
+
+    removeSection(configKey, index, containerId) {
+        this._config[configKey].splice(index, 1);
+        this.renderSections(containerId, configKey);
+    },
+
+    addTagToSection(configKey, sectionIndex, text, containerId) {
+        if (this._config[configKey][sectionIndex].includes(text)) return;
+        this._config[configKey][sectionIndex].push(text);
+        this.renderSections(containerId, configKey);
+
+        // Restore focus
+        setTimeout(() => {
+            const container = document.getElementById(containerId);
+            if (container) {
+                const inputs = container.querySelectorAll('input');
+                if (inputs[sectionIndex]) {
+                    inputs[sectionIndex].focus();
+                }
+            }
+        }, 0);
+    },
+
+    removeTagFromSection(configKey, sectionIndex, text, containerId) {
+        this._config[configKey][sectionIndex] = this._config[configKey][sectionIndex].filter(t => t !== text);
+        this.renderSections(containerId, configKey);
+    },
+
+
     async open() {
+        if (!this._modalElement) await this.render();
         await this.loadConfig();
         this.populateForm();
         this.switchView('config');
@@ -256,14 +276,15 @@ const FindJobsModal = {
 
     close() {
         if (this._pollInterval) {
-            // Warn if scraping?
             if (!confirm("Scraping in progress. Are you sure you want to stop monitoring? The scrape will continue in the background.")) {
                 return;
             }
             clearInterval(this._pollInterval);
             this._pollInterval = null;
         }
-        this._modalElement.classList.remove('active');
+        if (this._modalElement) {
+            this._modalElement.classList.remove('active');
+        }
     },
 
     switchView(view) {
@@ -287,16 +308,25 @@ const FindJobsModal = {
             const response = await fetch('/api/config/load');
             const data = await response.json();
             this._config = { ...this._config, ...data };
+
+            // Normalize inputs
+            this.normalizeConfig('job_titles');
+            this.normalizeConfig('description_keywords');
+
         } catch (error) {
             console.error("Error loading config:", error);
         }
     },
 
     populateForm() {
-        this.triggerTagRender('searchTermsInput', 'search_terms');
-        this.triggerTagRender('jobTitlesInput', 'job_titles');
-        this.triggerTagRender('descKeywordsInput', 'description_keywords');
+        // Tag Inputs (Simple)
+        this.renderSimpleTags('searchTermsInput', 'search_terms');
 
+        // Section Inputs (Nested)
+        this.renderSections('jobTitlesSectionsContainer', 'job_titles');
+        this.renderSections('descKeywordsSectionsContainer', 'description_keywords');
+
+        // Rest of the form
         const slider = document.getElementById('hoursOldSlider');
         const hours = this._config.hours_old || 24;
         let closestIndex = 0;
@@ -314,16 +344,10 @@ const FindJobsModal = {
         });
     },
 
-    triggerTagRender(containerId, configKey) {
-        // Helper to force render. 
+    renderSimpleTags(containerId, configKey) {
         const container = document.getElementById(containerId);
+        if (!container) return;
         const input = container.querySelector('input');
-
-        const removeTag = (text) => {
-            this._config[configKey] = this._config[configKey].filter(t => t !== text);
-            this.triggerTagRender(containerId, configKey);
-        };
-
         const tags = container.querySelectorAll('.tag-pill');
         tags.forEach(t => t.remove());
 
@@ -331,7 +355,10 @@ const FindJobsModal = {
             const tag = document.createElement('div');
             tag.className = 'tag-pill';
             tag.innerHTML = `${text} <span class="tag-remove">&times;</span>`;
-            tag.querySelector('.tag-remove').onclick = () => removeTag(text);
+            tag.querySelector('.tag-remove').onclick = () => {
+                this._config[configKey] = this._config[configKey].filter(t => t !== text);
+                this.renderSimpleTags(containerId, configKey);
+            };
             container.insertBefore(tag, input);
         });
     },
@@ -433,7 +460,7 @@ const FindJobsModal = {
         } else if (data.status === 'failed') {
             document.getElementById('progressStage').innerText = "Scraping Failed";
             document.getElementById('progressStage').classList.add('text-red-500');
-            document.getElementById('progressActions').classList.remove('hidden'); // Allow close
+            document.getElementById('progressActions').classList.remove('hidden');
             document.getElementById('progressCloseBtn').innerText = "Close";
             document.getElementById('progressCloseBtn').onclick = () => this.close();
         }
