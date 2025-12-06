@@ -27,6 +27,7 @@ The primary table storing job listing information retrieved from web scrapers.
 - `title` (String, Not Null) - Job title
 - `company` (String, Not Null) - Company name
 - `location` (String, Not Null) - Job location
+- `link` (String) - URL to the job posting
 - `description` (String) - Full job description
 - `compensation` (String) - Salary/compensation information
 - `ignore` (Integer, Default: 0) - Flag to exclude from application tracking (0 = track, 1 = ignore)

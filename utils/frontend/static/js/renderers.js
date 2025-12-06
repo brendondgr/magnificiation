@@ -61,41 +61,54 @@ function renderAll() {
 }
 
 function renderNewJobCard(job) {
+    // Card Container with fixed height - Increased contrast
     const card = document.createElement('div');
-    card.className = "bg-white rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col h-full group";
+    card.className = "bg-white rounded-xl border border-slate-300 shadow-md hover:shadow-xl hover:border-slate-400 transition-all flex flex-col h-[450px] group relative overflow-hidden";
+
+    // Prevent card click when clicking interactive elements
     card.onclick = (e) => {
-        if (e.target.closest('button')) return;
+        if (e.target.closest('button') || e.target.closest('a')) return;
         openJobDetails(job);
     };
 
     card.innerHTML = `
-        <div class="flex justify-between items-start mb-3">
-            <div class="h-10 w-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
-                <i class="fa-regular fa-building"></i>
+        <!-- Header Section with distinct background -->
+        <div class="px-5 py-4 bg-slate-50 border-b border-slate-200">
+            <div class="flex justify-between items-start mb-2">
+                <h3 class="text-lg font-bold text-slate-900 leading-tight pr-2 group-hover:text-primary-700 transition-colors line-clamp-2">${job.title}</h3>
+                <span class="flex-none text-[10px] font-bold tracking-wide text-slate-500 bg-white px-2 py-1 rounded border border-slate-200 shadow-sm">${job.created_at}</span>
             </div>
-            <span class="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100">${job.created_at}</span>
+            
+            <div class="font-bold text-slate-700 text-sm mb-1">${job.company}</div>
+            
+            <!-- Quick Info Tags -->
+            <div class="flex flex-wrap gap-2 pt-1 text-xs">
+                <span class="flex items-center px-1.5 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600 font-medium">
+                    <i class="fa-solid fa-location-dot mr-1.5 text-slate-400"></i>${job.location}
+                </span>
+                <span class="flex items-center px-1.5 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600 font-medium">
+                     <i class="fa-solid fa-sack-dollar mr-1.5 text-slate-400"></i>${job.compensation || "Not listed"}
+                </span>
+            </div>
         </div>
         
-        <h3 class="text-lg font-bold text-slate-900 leading-tight mb-1 group-hover:text-primary-600 transition-colors">${job.title}</h3>
-        <p class="text-slate-500 font-medium text-sm mb-4">${job.company}</p>
-        
-        <div class="space-y-2 mb-6 flex-1">
-            <div class="flex items-center text-xs text-slate-500">
-                <i class="fa-solid fa-location-dot w-5 text-center mr-1 text-slate-300"></i>
-                ${job.location}
-            </div>
-            <div class="flex items-center text-xs text-slate-500">
-                <i class="fa-solid fa-sack-dollar w-5 text-center mr-1 text-slate-300"></i>
-                ${job.compensation || "Not listed"}
-            </div>
+        <!-- Scrolling Description Area -->
+        <div class="flex-1 p-5 overflow-y-auto bg-white text-sm text-slate-600 leading-relaxed whitespace-pre-line custom-scrollbar relative">
+            ${job.description}
         </div>
 
-        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
-            <button onclick="ignoreJob(${job.id})" class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all">
-                <i class="fa-regular fa-eye-slash"></i> Ignore
+        <!-- Action Buttons Footer -->
+        <div class="p-4 bg-slate-50 border-t border-slate-200 grid grid-cols-3 gap-3">
+            <button onclick="ignoreJob(${job.id})" class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-red-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all" title="Ignore">
+                <i class="fa-regular fa-eye-slash"></i> <span class="hidden sm:inline">Ignore</span>
             </button>
-            <button onclick="applyJob(${job.id})" class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-100 transition-all">
-                Apply <i class="fa-solid fa-arrow-right"></i>
+            
+            <a href="${job.link || '#'}" target="_blank" class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-slate-600 hover:text-primary-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all" title="External Link">
+                <i class="fa-solid fa-external-link-alt"></i> <span class="hidden sm:inline">Link</span>
+            </a>
+
+            <button onclick="applyJob(${job.id})" class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold bg-primary-600 text-white hover:bg-primary-700 shadow-md hover:shadow-lg border border-transparent transition-all">
+                Applied <i class="fa-solid fa-check"></i>
             </button>
         </div>
     `;
@@ -104,7 +117,7 @@ function renderNewJobCard(job) {
 
 function renderKanbanCard(job, container) {
     const card = document.createElement('div');
-    card.className = "draggable-card bg-white p-4 rounded-lg border border-slate-200 shadow-sm mb-3 hover:shadow-md transition-all active:cursor-grabbing";
+    card.className = "draggable-card bg-white p-4 rounded-lg border border-slate-300 shadow-md hover:shadow-lg hover:border-slate-400 mb-3 transition-all active:cursor-grabbing group";
     card.setAttribute("draggable", "true");
     card.setAttribute("data-id", job.id);
 
@@ -127,12 +140,12 @@ function renderKanbanCard(job, container) {
 
     card.innerHTML = `
         <div class="flex justify-between items-start mb-2">
-            <h4 class="font-bold text-slate-900 text-sm leading-tight">${job.title}</h4>
+            <h4 class="font-bold text-slate-900 text-sm leading-tight group-hover:text-primary-700 transition-colors">${job.title}</h4>
         </div>
-        <p class="text-xs text-slate-500 font-medium mb-3">${job.company}</p>
-        <div class="flex items-center justify-between mt-2">
-            <span class="text-[10px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">${status}</span>
-            <i class="fa-solid fa-grip-lines text-slate-200 cursor-grab"></i>
+        <p class="text-xs text-slate-600 font-bold mb-3">${job.company}</p>
+        <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
+            <span class="text-[10px] font-bold tracking-wide text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-200">${status}</span>
+            <i class="fa-solid fa-grip-lines text-slate-300 group-hover:text-slate-500 cursor-grab"></i>
         </div>
     `;
     container.appendChild(card);
