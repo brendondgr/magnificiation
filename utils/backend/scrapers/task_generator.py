@@ -66,10 +66,12 @@ def load_jobs_config() -> Dict[str, Any]:
     # Validate expected keys exist
     if 'job_titles' not in config:
         config['job_titles'] = []
+    if 'search_terms' not in config:
+        config['search_terms'] = []
     if 'description_keywords' not in config:
         config['description_keywords'] = []
     
-    logger.info(f"Loaded config with {len(config['job_titles'])} job titles")
+    logger.info(f"Loaded config with {len(config.get('search_terms', []))} search terms and {len(config['job_titles'])} title filters")
     return config
 
 

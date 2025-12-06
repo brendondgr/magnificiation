@@ -27,17 +27,18 @@ logger = logging.getLogger(__name__)
 
 
 def execute_full_scraping_workflow(
-    job_titles: Optional[List[str]] = None,
+    search_terms: Optional[List[str]] = None,
     sites: Optional[List[str]] = None,
     results_wanted: int = DEFAULT_RESULTS_WANTED,
     hours_old: int = DEFAULT_HOURS_OLD,
-    save_to_database: bool = True
+    save_to_database: bool = True,
+    progress_callback: Optional[callable] = None
 ) -> Dict[str, Any]:
     """
     Execute the full scraping workflow from start to finish.
     
     Workflow Steps:
-    1. Generate scraping tasks from config (or provided titles)
+    1. Generate scraping tasks from config (or provided terms)
     2. Execute concurrent scraping
     3. Process and deduplicate data
     4. Store jobs in database (if enabled)
@@ -45,11 +46,12 @@ def execute_full_scraping_workflow(
     6. Return summary statistics
     
     Args:
-        job_titles: Optional list of job titles. If None, loads from config.
+        search_terms: Optional list of terms to search for. If None, loads from config.
         sites: Optional list of sites. If None, uses all supported sites.
         results_wanted: Number of results per search
         hours_old: Maximum age of job postings
         save_to_database: Whether to save results to database
+        progress_callback: Optional function(status_dict) to report progress
     
     Returns:
         Dict containing workflow statistics and results
@@ -63,36 +65,55 @@ def execute_full_scraping_workflow(
         'steps': {},
         'errors': []
     }
+
+    def update_progress(stage, percent, details=None):
+        if progress_callback:
+            progress_callback({
+                'stage': stage,
+                'percent': percent,
+                'details': details or {}
+            })
     
     try:
         # Step 1: Load configuration and generate tasks
+        update_progress('init', 5, {'message': 'Loading configuration...'})
         logger.info("Step 1: Loading configuration...")
-        if job_titles is None:
-            config = load_jobs_config()
-            job_titles = config.get('job_titles', [])
         
-        if not job_titles:
-            logger.warning("No job titles provided. Workflow aborted.")
-            results['errors'].append("No job titles provided")
+        # Load config regardless to get filter criteria
+        config = load_jobs_config()
+        
+        if search_terms is None:
+            search_terms = config.get('search_terms', [])
+            # Fallback to job_titles if search_terms is empty (backward compatibility)
+            if not search_terms:
+                search_terms = config.get('job_titles', [])
+        
+        if not search_terms:
+            logger.warning("No search terms provided. Workflow aborted.")
+            results['errors'].append("No search terms provided")
+            update_progress('failed', 0, {'message': 'No search terms provided'})
             return results
         
         if sites is None:
             sites = SUPPORTED_SITES.copy()
         
         results['steps']['config'] = {
-            'job_titles': job_titles,
+            'search_terms': search_terms,
             'sites': sites,
             'results_wanted': results_wanted,
             'hours_old': hours_old
         }
         
-        logger.info(f"  Job titles: {job_titles}")
+        logger.info(f"  Search terms: {search_terms}")
         logger.info(f"  Sites: {sites}")
         
         # Step 2: Execute concurrent scraping
+        update_progress('scraping', 10, {'message': f'Starting scrape for {len(search_terms)} terms...'})
         logger.info("Step 2: Executing concurrent scraping...")
+        
+        # Note: JobSpyScraper takes 'job_titles' argument but we pass search_terms
         scraper = JobSpyScraper(
-            job_titles=job_titles,
+            job_titles=search_terms, 
             sites=sites,
             results_wanted=results_wanted,
             hours_old=hours_old,
@@ -112,9 +133,11 @@ def execute_full_scraping_workflow(
         if not raw_jobs:
             logger.warning("No jobs scraped. Workflow complete.")
             results['success'] = True
+            update_progress('completed', 100, {'message': 'No jobs found', 'jobs_found': 0})
             return results
         
         # Step 3: Process and deduplicate data
+        update_progress('processing', 80, {'message': f'Processing {len(raw_jobs)} raw jobs...'})
         logger.info("Step 3: Processing and deduplicating data...")
         processed_jobs = process_scraped_jobs(raw_jobs)
         
@@ -128,6 +151,7 @@ def execute_full_scraping_workflow(
         # Step 4: Store in database
         job_ids = []
         if save_to_database:
+            update_progress('saving', 90, {'message': 'Saving to database...'})
             logger.info("Step 4: Storing jobs in database...")
             from ..database.operations import add_job, get_job_by_criteria
             
@@ -166,8 +190,10 @@ def execute_full_scraping_workflow(
             results['steps']['storage'] = {'skipped': True}
         
         # Step 5: Apply filters
+        update_progress('filtering', 95, {'message': 'Applying filters...'})
         logger.info("Step 5: Applying filters...")
         if job_ids:
+            # Mark jobs as ignored if they don't match criteria
             filter_results = filter_and_mark_jobs(job_ids)
             results['steps']['filtering'] = filter_results
             logger.info(f"  Kept {filter_results['kept']}, ignored {filter_results['ignored']}")
@@ -182,6 +208,11 @@ def execute_full_scraping_workflow(
             logger.info(f"  Kept {len(filter_results['kept'])}, ignored {len(filter_results['ignored'])}")
         
         results['success'] = True
+        update_progress('completed', 100, {
+            'message': 'Completed',
+            'jobs_found': len(processed_jobs),
+            'jobs_added': len(job_ids) if save_to_database else 0
+        })
         
         logger.info("=" * 60)
         logger.info("Scraping Workflow Complete")
@@ -190,6 +221,7 @@ def execute_full_scraping_workflow(
     except Exception as e:
         logger.error(f"Workflow error: {e}")
         results['errors'].append(str(e))
+        update_progress('failed', 0, {'message': f'Error: {str(e)}'})
     
     return results
 

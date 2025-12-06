@@ -189,9 +189,7 @@ if __name__ == "__main__":
     # Define job titles to search
     job_titles = [
         "software engineer",
-        "data scientist", 
-        "product manager",
-        "devops engineer"
+        "data scientist",
     ]
     
     # Create and run scraper

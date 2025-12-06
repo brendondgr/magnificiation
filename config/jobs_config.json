@@ -1,4 +1,22 @@
 {
-    "job_titles": [],
-    "description_keywords": []
+    "search_terms": [
+        "machine learning intern",
+        "biomedical machine learning intern",
+        "medical data analyst"
+    ],
+    "job_titles": [
+        "data scientist",
+        "machine learning",
+        "data science",
+        "health",
+        "data"
+    ],
+    "description_keywords": [],
+    "sites": [
+        "indeed",
+        "linkedin",
+        "zip_recruiter"
+    ],
+    "hours_old": 24,
+    "results_wanted": 20
 }
