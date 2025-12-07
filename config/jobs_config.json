@@ -5,13 +5,17 @@
         "medical data analyst"
     ],
     "job_titles": [
-        "data scientist",
-        "machine learning",
-        "data science",
-        "health",
-        "data"
+        [
+            "data scientist",
+            "machine learning",
+            "data science",
+            "health",
+            "data"
+        ]
     ],
-    "description_keywords": [],
+    "description_keywords": [
+        []
+    ],
     "sites": [
         "indeed",
         "linkedin",

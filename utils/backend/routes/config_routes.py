@@ -16,7 +16,8 @@ def load_jobs_config():
             "description_keywords": [],
             "sites": ["indeed", "linkedin", "glassdoor", "zip_recruiter", "google"],
             "hours_old": 24,
-            "results_wanted": 20
+            "results_wanted": 20,
+            "location": ""
         }
     try:
         with open(CONFIG_PATH, 'r') as f:

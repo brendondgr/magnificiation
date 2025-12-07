@@ -32,7 +32,8 @@ def execute_full_scraping_workflow(
     results_wanted: int = DEFAULT_RESULTS_WANTED,
     hours_old: int = DEFAULT_HOURS_OLD,
     save_to_database: bool = True,
-    progress_callback: Optional[callable] = None
+    progress_callback: Optional[callable] = None,
+    location: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Execute the full scraping workflow from start to finish.
@@ -88,6 +89,10 @@ def execute_full_scraping_workflow(
             if not search_terms:
                 search_terms = config.get('job_titles', [])
         
+        if location is None:
+            location = config.get('location', '')
+            location = location if location else None
+        
         if not search_terms:
             logger.warning("No search terms provided. Workflow aborted.")
             results['errors'].append("No search terms provided")
@@ -101,7 +106,8 @@ def execute_full_scraping_workflow(
             'search_terms': search_terms,
             'sites': sites,
             'results_wanted': results_wanted,
-            'hours_old': hours_old
+            'hours_old': hours_old,
+            'location': location
         }
         
         logger.info(f"  Search terms: {search_terms}")
@@ -117,7 +123,8 @@ def execute_full_scraping_workflow(
             sites=sites,
             results_wanted=results_wanted,
             hours_old=hours_old,
-            country_indeed=DEFAULT_COUNTRY
+            country_indeed=DEFAULT_COUNTRY,
+            location=location
         )
         
         scraper.run()

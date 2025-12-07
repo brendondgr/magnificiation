@@ -38,6 +38,7 @@ class JobScrapeTask:
     results_wanted: int = DEFAULT_RESULTS_WANTED
     hours_old: int = DEFAULT_HOURS_OLD
     country_indeed: str = DEFAULT_COUNTRY
+    location: Optional[str] = None
     
     # Results storage
     jobs_data: List[Dict[str, Any]] = field(default_factory=list, init=False)
@@ -55,13 +56,23 @@ class JobScrapeTask:
         
         for site in self.sites:
             try:
-                jobs_df = scrape_jobs(
-                    site_name=[site],
-                    search_term=self.job_title,
-                    results_wanted=self.results_wanted,
-                    hours_old=self.hours_old,
-                    country_indeed=self.country_indeed
-                )
+                # Prepare arguments for scrape_jobs
+                scrape_args = {
+                    'site_name': [site],
+                    'search_term': self.job_title,
+                    'results_wanted': self.results_wanted,
+                    'hours_old': self.hours_old,
+                    'country_indeed': self.country_indeed,
+                    'location': self.location
+                }
+                
+                # Special handling for Google
+                if site == 'google' and self.location:
+                    google_term = self._generate_google_search_term()
+                    if google_term:
+                        scrape_args['google_search_term'] = google_term
+                
+                jobs_df = scrape_jobs(**scrape_args)
                 
                 if jobs_df is not None and not jobs_df.empty:
                     # Add search metadata to the DataFrame
@@ -84,6 +95,30 @@ class JobScrapeTask:
         
         logger.info(f"Completed scrape for '{self.job_title}': {self.total_jobs} total jobs")
         return self
+
+    def _generate_google_search_term(self) -> Optional[str]:
+        """
+        Generate a specific search term for Google Jobs to include location and age.
+        Format: "{job_title} jobs near {location} in the last {date}"
+        """
+        if not self.location:
+            return None
+            
+        # Map hours to text
+        if self.hours_old <= 24:
+            date_str = "24 Hours"
+        elif self.hours_old <= 48:
+            date_str = "2 Days"
+        elif self.hours_old <= 72:
+            date_str = "3 Days"
+        elif self.hours_old <= 168:
+            date_str = "Week"
+        elif self.hours_old <= 720:
+            date_str = "Month"
+        else:
+            date_str = f"{self.hours_old} Hours"
+            
+        return f"{self.job_title} jobs near {self.location} in the last {date_str}"
     
     @property
     def total_jobs(self) -> int:
@@ -117,7 +152,8 @@ def scrape_single_site(
     site: str,
     results_wanted: int = DEFAULT_RESULTS_WANTED,
     hours_old: int = DEFAULT_HOURS_OLD,
-    country: str = DEFAULT_COUNTRY
+    country: str = DEFAULT_COUNTRY,
+    location: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """
     Scrape jobs from a single site for a single job title.
@@ -138,13 +174,30 @@ def scrape_single_site(
         raise ValueError(f"Invalid site '{site}'. Supported sites: {SUPPORTED_SITES}")
     
     try:
-        jobs_df = scrape_jobs(
-            site_name=[site],
-            search_term=job_title,
-            results_wanted=results_wanted,
-            hours_old=hours_old,
-            country_indeed=country
-        )
+        # Prepare arguments
+        scrape_args = {
+            'site_name': [site],
+            'search_term': job_title,
+            'results_wanted': results_wanted,
+            'hours_old': hours_old,
+            'country_indeed': country,
+            'location': location
+        }
+        
+        # Google special logic
+        if site == 'google' and location:
+            # Map hours to text (duplicate logic for standalone function, or could extract to helper)
+            date_str = "24 Hours" # Default fallback
+            if hours_old <= 24: date_str = "24 Hours"
+            elif hours_old <= 48: date_str = "2 Days"
+            elif hours_old <= 72: date_str = "3 Days"
+            elif hours_old <= 168: date_str = "Week"
+            elif hours_old <= 720: date_str = "Month"
+            else: date_str = f"{hours_old} Hours"
+            
+            scrape_args['google_search_term'] = f"{job_title} jobs near {location} in the last {date_str}"
+
+        jobs_df = scrape_jobs(**scrape_args)
         
         if jobs_df is not None and not jobs_df.empty:
             jobs_df['search_term'] = job_title

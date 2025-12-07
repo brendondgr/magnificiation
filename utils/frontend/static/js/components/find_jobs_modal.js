@@ -7,7 +7,8 @@ const FindJobsModal = {
         description_keywords: [], // Will be [[kw1, kw2], [kw3]]
         sites: [],
         hours_old: 24,
-        results_wanted: 20
+        results_wanted: 20,
+        location: ''
     },
 
     hoursOptions: [
@@ -338,6 +339,9 @@ const FindJobsModal = {
 
         document.getElementById('resultsWantedInput').value = this._config.results_wanted || 20;
 
+        const locInput = document.getElementById('locationInput');
+        if (locInput) locInput.value = this._config.location || '';
+
         const sitesCheckboxes = document.querySelectorAll('input[name="site"]');
         sitesCheckboxes.forEach(cb => {
             cb.checked = this._config.sites.includes(cb.value);
@@ -371,12 +375,14 @@ const FindJobsModal = {
         const sliderIndex = document.getElementById('hoursOldSlider').value;
         const hoursOld = this.hoursOptions[sliderIndex].value;
         const resultsWanted = parseInt(document.getElementById('resultsWantedInput').value);
+        const location = document.getElementById('locationInput').value.trim();
 
         const configToSave = {
             ...this._config,
             sites: sites,
             hours_old: hoursOld,
-            results_wanted: resultsWanted
+            results_wanted: resultsWanted,
+            location: location
         };
 
         try {

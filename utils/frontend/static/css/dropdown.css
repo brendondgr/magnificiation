@@ -42,6 +42,10 @@
 /* Dropdown Animation */
 #llm-dropdown {
     transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 0.5rem;
 }
 
 #llm-dropdown.hidden {

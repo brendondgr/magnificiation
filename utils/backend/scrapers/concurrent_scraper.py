@@ -45,7 +45,8 @@ class JobSpyScraper:
         results_wanted: int = DEFAULT_RESULTS_WANTED,
         hours_old: int = DEFAULT_HOURS_OLD,
         country_indeed: str = DEFAULT_COUNTRY,
-        max_threads: Optional[int] = None
+        max_threads: Optional[int] = None,
+        location: Optional[str] = None
     ):
         """
         Initialize the JobSpyScraper.
@@ -66,6 +67,7 @@ class JobSpyScraper:
         self.hours_old = hours_old
         self.country_indeed = country_indeed
         self._max_threads = max_threads
+        self.location = location
         
         # Create data directory
         os.makedirs(self.data_dir, exist_ok=True)
@@ -77,7 +79,8 @@ class JobSpyScraper:
                 sites=self.sites,
                 results_wanted=self.results_wanted,
                 hours_old=self.hours_old,
-                country_indeed=self.country_indeed
+                country_indeed=self.country_indeed,
+                location=self.location
             )
             for title in self.job_titles
         ]
@@ -212,7 +215,8 @@ def execute_scraping_tasks(
     job_titles: List[str],
     sites: Optional[List[str]] = None,
     results_wanted: int = DEFAULT_RESULTS_WANTED,
-    hours_old: int = DEFAULT_HOURS_OLD
+    hours_old: int = DEFAULT_HOURS_OLD,
+    location: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """
     Convenience function to execute scraping tasks and return raw results.
@@ -230,7 +234,8 @@ def execute_scraping_tasks(
         job_titles=job_titles,
         sites=sites,
         results_wanted=results_wanted,
-        hours_old=hours_old
+        hours_old=hours_old,
+        location=location
     )
     
     scraper.run()

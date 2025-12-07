@@ -20,6 +20,13 @@
                     </div>
                 </div>
 
+                <!-- Location -->
+                <div class="form-group">
+                    <label class="form-label">Location <span class="text-xs text-slate-500 font-normal">(Optional)</span></label>
+                    <input type="text" id="locationInput" class="w-full px-3 py-2 border border-slate-300 dark:border-neon-border rounded-lg bg-white dark:bg-neon-gray text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-slate-400 dark:placeholder-slate-500" placeholder="City, State (e.g. San Francisco, CA)">
+                    <p class="text-[10px] text-slate-400 mt-1 ml-1">Use 2-letter state code (e.g. CA, NY)</p>
+                </div>
+
                 <!-- Hours Old -->
                 <div class="form-group">
                     <label class="form-label">Job Posting Age</label>
@@ -71,8 +78,16 @@
                 
                  <!-- Results Wanted -->
                 <div class="form-group">
-                    <label class="form-label">Max Results Per Search</label>
-                    <input type="number" id="resultsWantedInput" class="w-24 px-3 py-2 border border-slate-300 dark:border-neon-border rounded-lg bg-white dark:bg-neon-gray text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" value="20" min="5" max="50">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="form-label">Max Results Per Search</label>
+                            <input type="number" id="resultsWantedInput" class="w-24 px-3 py-2 border border-slate-300 dark:border-neon-border rounded-lg bg-white dark:bg-neon-gray text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" value="20" min="5" max="50">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="refineDescriptionsCheckbox" class="w-4 h-4 text-primary-600 dark:text-neon-blue bg-slate-100 dark:bg-neon-gray border-slate-300 dark:border-neon-border rounded focus:ring-primary-500 dark:focus:ring-neon-blue focus:ring-2">
+                            <label for="refineDescriptionsCheckbox" class="form-label mb-0">Refine Descriptions with LLM</label>
+                        </div>
+                    </div>
                 </div>
             </div>
 
