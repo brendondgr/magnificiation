@@ -1,4 +1,16 @@
 // --- RENDER FUNCTIONS ---
+let currentPage = 1;
+const itemsPerPage = 50;
+
+window.changePage = function (page) {
+    currentPage = page;
+    renderAll();
+    // Scroll to top of main container
+    const mainContainer = document.getElementById('mainContainer');
+    if (mainContainer) {
+        mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
 
 // --- HELPER FUNCTIONS ---
 
@@ -104,6 +116,7 @@ let showIgnored = false;
 
 function toggleShowIgnored() {
     showIgnored = !showIgnored;
+    currentPage = 1; // Reset to page 1 when toggling view
     renderAll();
 }
 
@@ -116,20 +129,24 @@ function renderAll() {
     colArchived.innerHTML = "";
 
     let counts = { new: 0, applied: 0, interview: 0, offer: 0, archived: 0, ignored: 0 };
+    let newJobsList = [];
 
     jobsData.forEach(job => {
         if (job.ignore === 1) {
             counts.ignored++;
             // Only render ignored jobs if toggle is on
             if (showIgnored) {
-                renderNewJobCard(job, true);
+                newJobsList.push({ job, isIgnored: true });
             }
+            // Ignored jobs don't go to Kanban and are not counted as 'new' unless user wants to count them?
+            // Original code: if ignored -> return. So they are never 'new' or 'kanban'.
+            // They are just 'ignored'.
             return;
         }
 
         if (isJobNew(job)) {
             counts.new++;
-            renderNewJobCard(job, false);
+            newJobsList.push({ job, isIgnored: false });
         } else {
             const status = getCurrentStatus(job);
             let targetCol = colApplied; // Default
@@ -152,6 +169,29 @@ function renderAll() {
             renderKanbanCard(job, targetCol);
         }
     });
+
+    // --- Pagination Logic ---
+    const totalItems = newJobsList.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    // Ensure currentPage is valid
+    if (currentPage > totalPages) currentPage = totalPages || 1;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+
+    const jobsToShow = newJobsList.slice(startIndex, endIndex);
+
+    // Render current page jobs
+    jobsToShow.forEach(item => {
+        renderNewJobCard(item.job, item.isIgnored);
+    });
+
+    // Render Pagination Controls
+    if (totalPages > 1) {
+        renderPagination(totalPages);
+    }
 
     // Update Counts
     let newJobText = counts.new;
@@ -194,6 +234,37 @@ function renderAll() {
     document.getElementById('count-interview').innerText = counts.interview;
     document.getElementById('count-offer').innerText = counts.offer;
     document.getElementById('count-archived').innerText = counts.archived;
+}
+
+function renderPagination(totalPages) {
+    const paginationContainer = document.createElement('div');
+    // Span full width in grid (col-span-full for tailwind/css grid)
+    paginationContainer.className = "col-span-full flex justify-center items-center space-x-2 mt-8 py-4";
+
+    // Prev Button
+    const prevBtn = document.createElement('button');
+    prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+    prevBtn.className = `p-2 rounded-md ${currentPage === 1 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100 hover:text-primary-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-neon-blue transition-all'}`;
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => changePage(currentPage - 1);
+
+    // Page Info
+    const pageInfo = document.createElement('span');
+    pageInfo.className = "text-sm font-medium text-slate-500 dark:text-gray-400 mx-4";
+    pageInfo.innerText = `Page ${currentPage} of ${totalPages}`;
+
+    // Next Button
+    const nextBtn = document.createElement('button');
+    nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+    nextBtn.className = `p-2 rounded-md ${currentPage === totalPages ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100 hover:text-primary-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-neon-blue transition-all'}`;
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => changePage(currentPage + 1);
+
+    paginationContainer.appendChild(prevBtn);
+    paginationContainer.appendChild(pageInfo);
+    paginationContainer.appendChild(nextBtn);
+
+    newJobContainer.appendChild(paginationContainer);
 }
 
 function renderNewJobCard(job, isIgnored = false) {
