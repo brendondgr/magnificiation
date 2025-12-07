@@ -18,3 +18,9 @@ conda activate magnify
 pip install -r requirements.txt
 python app.py
 ```
+
+### Standard Python
+```bash
+pip install -r requirements.txt
+flask run app.py
+```
