@@ -119,8 +119,11 @@
 
         // Load all partials on page load
         document.addEventListener('DOMContentLoaded', async function() {
+            // 1. Load Header first (contains llm-dropdown-container)
+            await loadPartial('header-container', 'parts/header.html');
+
+            // 2. Load the rest in parallel
             await Promise.all([
-                loadPartial('header-container', 'parts/header.html'),
                 loadPartial('mobile-nav-container', 'parts/mobile-nav.html'),
                 loadPartial('llm-dropdown-container', 'parts/llm-dropdown.html'),
                 loadPartial('sidebar-container', 'parts/sidebar.html'),

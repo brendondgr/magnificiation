@@ -99,6 +99,14 @@ function initializeElements() {
     colArchived = document.getElementById('col-archived');
 }
 
+// State for rendering
+let showIgnored = false;
+
+function toggleShowIgnored() {
+    showIgnored = !showIgnored;
+    renderAll();
+}
+
 function renderAll() {
     // Clear all containers
     newJobContainer.innerHTML = "";
@@ -107,14 +115,21 @@ function renderAll() {
     colOffer.innerHTML = "";
     colArchived.innerHTML = "";
 
-    let counts = { new: 0, applied: 0, interview: 0, offer: 0, archived: 0 };
+    let counts = { new: 0, applied: 0, interview: 0, offer: 0, archived: 0, ignored: 0 };
 
     jobsData.forEach(job => {
-        if (job.ignore === 1) return;
+        if (job.ignore === 1) {
+            counts.ignored++;
+            // Only render ignored jobs if toggle is on
+            if (showIgnored) {
+                renderNewJobCard(job, true);
+            }
+            return;
+        }
 
         if (isJobNew(job)) {
             counts.new++;
-            renderNewJobCard(job);
+            renderNewJobCard(job, false);
         } else {
             const status = getCurrentStatus(job);
             let targetCol = colApplied; // Default
@@ -139,14 +154,49 @@ function renderAll() {
     });
 
     // Update Counts
-    document.getElementById('newJobCount').innerText = counts.new;
+    let newJobText = counts.new;
+
+    // Header controls container
+    const countContainer = document.getElementById('newJobCount').parentElement;
+
+    // Rebuild the header controls slightly to accommodate the button
+    // This is a bit hacky, but robust enough for this context
+    if (counts.ignored > 0) {
+        newJobText += ` <span class="text-xs text-slate-400 font-normal">(${counts.ignored} hidden)</span>`;
+
+        let toggle = document.getElementById('ignoredToggleBtn');
+        if (!toggle) {
+            toggle = document.createElement('button');
+            toggle.id = 'ignoredToggleBtn';
+            toggle.className = "ml-3 px-2 py-1 text-xs font-medium rounded-md border transition-all";
+            toggle.onclick = toggleShowIgnored;
+            countContainer.appendChild(toggle); // Add it if not there
+        }
+
+        // Update button state
+        toggle.className = showIgnored
+            ? "ml-3 text-primary-600 dark:text-neon-blue bg-primary-50 dark:bg-neon-blue/10 border-primary-200 dark:border-neon-blue/30 hover:bg-primary-100"
+            : "ml-3 text-slate-400 hover:text-slate-600 dark:text-gray-500 dark:hover:text-gray-300 border-transparent hover:bg-slate-100 dark:hover:bg-white/5";
+
+        toggle.innerHTML = showIgnored
+            ? '<i class="fa-solid fa-eye mr-1"></i> Hide'
+            : '<i class="fa-solid fa-eye-slash mr-1"></i> Show';
+
+    } else {
+        // Remove button if no ignored jobs
+        const toggle = document.getElementById('ignoredToggleBtn');
+        if (toggle) toggle.remove();
+    }
+
+    document.getElementById('newJobCount').innerHTML = newJobText;
+
     document.getElementById('count-applied').innerText = counts.applied;
     document.getElementById('count-interview').innerText = counts.interview;
     document.getElementById('count-offer').innerText = counts.offer;
     document.getElementById('count-archived').innerText = counts.archived;
 }
 
-function renderNewJobCard(job) {
+function renderNewJobCard(job, isIgnored = false) {
     // Format data using helper functions
     const formattedDate = formatDate(job.created_at);
     const formattedCompensation = formatCompensation(job.compensation);
@@ -156,7 +206,11 @@ function renderNewJobCard(job) {
     const card = document.createElement('div');
     // Add fixed height for cards with descriptions, auto height for those without
     const cardHeight = formattedDescription ? "h-[450px]" : "";
-    card.className = `bg-white dark:bg-neon-gray-light rounded-xl border border-slate-300 dark:border-neon-border-light shadow-md hover:shadow-xl hover:border-slate-400 dark:hover:border-neon-blue dark:hover:shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all flex flex-col ${cardHeight} group relative overflow-hidden duration-300`;
+
+    // Check if ignored and add styling
+    const opacityClass = isIgnored ? "opacity-60 grayscale hover:grayscale-0 hover:opacity-100 ring-2 ring-red-100 dark:ring-red-900/30" : "";
+
+    card.className = `bg-white dark:bg-neon-gray-light rounded-xl border border-slate-300 dark:border-neon-border-light shadow-md hover:shadow-xl hover:border-slate-400 dark:hover:border-neon-blue dark:hover:shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all flex flex-col ${cardHeight} group relative overflow-hidden duration-300 ${opacityClass}`;
 
     // Prevent card click when clicking interactive elements
     card.onclick = (e) => {
@@ -199,8 +253,8 @@ function renderNewJobCard(job) {
 
         <!-- Action Buttons Footer -->
         <div class="p-4 bg-slate-50 dark:bg-neon-gray/80 border-t border-slate-200 dark:border-neon-border grid grid-cols-3 gap-3">
-            <button onclick="ignoreJob(${job.id})" class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-slate-500 dark:text-gray-400 hover:text-red-700 dark:hover:text-red-400 hover:bg-white dark:hover:bg-neon-gray hover:shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-neon-border-light transition-all" title="Ignore">
-                <i class="fa-regular fa-eye-slash"></i> <span class="hidden sm:inline">Ignore</span>
+            <button onclick="ignoreJob(${job.id})" class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-slate-500 dark:text-gray-400 hover:text-red-700 dark:hover:text-red-400 hover:bg-white dark:hover:bg-neon-gray hover:shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-neon-border-light transition-all" title="${isIgnored ? 'Unignore' : 'Ignore'}">
+                <i class="fa-regular ${isIgnored ? 'fa-eye' : 'fa-eye-slash'}"></i> <span class="hidden sm:inline">${isIgnored ? 'Unignore' : 'Ignore'}</span>
             </button>
             
             <a href="${job.link || '#'}" target="_blank" class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-slate-600 dark:text-gray-300 hover:text-primary-700 dark:hover:text-neon-blue hover:bg-white dark:hover:bg-neon-gray hover:shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-neon-border-light transition-all" title="External Link">

@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from ..database import operations as db_ops
+from ..database.init_db import reset_database
 from loguru import logger
 
 job_bp = Blueprint('job_bp', __name__)
@@ -9,7 +10,7 @@ def get_jobs():
     """Get all active jobs with their application statuses."""
     try:
         # Get all active jobs (ignore=0)
-        jobs = db_ops.get_all_jobs(include_ignored=False)
+        jobs = db_ops.get_all_jobs(include_ignored=True)
         
         # Hydrate with statuses
         full_jobs = []
@@ -74,4 +75,14 @@ def update_status(job_id):
         else:
             return jsonify({'success': False, 'message': 'Update failed'}), 400
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@job_bp.route('/api/database/clear', methods=['POST'])
+def clear_database():
+    """Clear and reset the database."""
+    try:
+        reset_database()
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error clearing database: {e}")
         return jsonify({'error': str(e)}), 500

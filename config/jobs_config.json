@@ -1,17 +1,9 @@
 {
     "search_terms": [
-        "machine learning intern",
-        "biomedical machine learning intern",
-        "medical data analyst"
+        "cybersecurity"
     ],
     "job_titles": [
-        [
-            "data scientist",
-            "machine learning",
-            "data science",
-            "health",
-            "data"
-        ]
+        []
     ],
     "description_keywords": [
         []
@@ -19,8 +11,11 @@
     "sites": [
         "indeed",
         "linkedin",
-        "zip_recruiter"
+        "glassdoor",
+        "zip_recruiter",
+        "google"
     ],
-    "hours_old": 24,
-    "results_wanted": 20
+    "hours_old": 168,
+    "results_wanted": 20,
+    "location": "Lehigh Valley, PA"
 }

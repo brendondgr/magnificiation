@@ -83,8 +83,12 @@ function ignoreJob(id) {
     const job = jobsData.find(j => j.id === id);
     if (!job) return;
 
+    // Toggle logic: if 1 then 0, if 0 then 1
+    const newIgnoreValue = job.ignore === 1 ? 0 : 1;
+
     // Update locally first for immediate feedback
-    job.ignore = 1;
+    const originalValue = job.ignore;
+    job.ignore = newIgnoreValue;
     renderAll();
 
     // Send request to backend to persist the change
@@ -93,21 +97,21 @@ function ignoreJob(id) {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ ignore: 1 })
+        body: JSON.stringify({ ignore: newIgnoreValue })
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to ignore job');
-        }
-        return response.json();
-    })
-    .catch(error => {
-        console.error('Error ignoring job:', error);
-        // Revert the local change if the request fails
-        job.ignore = 0;
-        renderAll();
-        alert('Failed to ignore job. Please try again.');
-    });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to update job ignore status');
+            }
+            return response.json();
+        })
+        .catch(error => {
+            console.error('Error updating ignore status:', error);
+            // Revert the local change if the request fails
+            job.ignore = originalValue;
+            renderAll();
+            alert('Failed to update job status. Please try again.');
+        });
 }
 
 // Tab Switching
@@ -199,4 +203,46 @@ function toggleStatus(jobId, statusIndex) {
 function toggleSidebar() {
     const sidebar = document.getElementById('filters-sidebar');
     sidebar.classList.toggle('sidebar-hidden');
+}
+
+// Database Management
+async function clearDatabase() {
+    if (!confirm('Are you sure you want to clear the database? This will delete ALL jobs and application statuses. This action cannot be undone.')) {
+        return;
+    }
+
+    const btn = document.querySelector('button[onclick="clearDatabase()"]');
+    const originalContent = btn.innerHTML;
+
+    try {
+        // Loading state
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Clearing...';
+        btn.disabled = true;
+
+        const response = await fetch('/api/database/clear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Failed to clear database');
+        }
+
+        // Success - refresh data
+        await fetchJobs();
+        renderAll();
+
+    } catch (error) {
+        console.error('Error clearing database:', error);
+        alert(`Error: ${error.message}`);
+    } finally {
+        // Reset button state
+        if (btn) {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+        }
+    }
 }
